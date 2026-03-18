@@ -1,4 +1,5 @@
 import { muapi } from '../lib/muapi.js';
+import { createJob, getJob } from '../lib/localapi.js';
 import {
     t2iModels, getAspectRatiosForModel, getResolutionsForModel, getQualityFieldForModel,
     i2iModels, getAspectRatiosForI2IModel, getResolutionsForI2IModel, getQualityFieldForI2IModel,
@@ -578,6 +579,46 @@ export function ImageStudio() {
         textarea.focus();
     };
 
+    async function runLocalGeneration(prompt) {
+        const { job_id } = await createJob(prompt, "image");
+
+        let status = "queued";
+        let result = null;
+
+        while (status !== "completed") {
+            const job = await getJob(job_id);
+            status = job.status;
+
+            if (status === "completed") {
+                result = job.result;
+
+                // TEMP UI OUTPUT
+                const fileUrl = "http://localhost:8000/outputs/" + result.output_path.split("/").pop();
+
+                const img = document.createElement("img");
+                img.src = fileUrl;
+                img.style.width = "300px";
+                img.style.marginTop = "10px";
+                img.style.border = "1px solid #00ffcc";
+                img.style.position = "fixed";
+                img.style.bottom = "20px";
+                img.style.left = "20px";
+                img.style.zIndex = "9999";
+                img.style.backgroundColor = "rgba(0,0,0,0.8)";
+                img.style.padding = "10px";
+                img.style.borderRadius = "8px";
+
+                document.body.appendChild(img);
+
+                break;
+            }
+
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        console.log("RESULT:", result);
+    }
+
     // ==========================================
     // 5. GENERATION LOGIC
     // ==========================================
@@ -595,73 +636,13 @@ export function ImageStudio() {
             }
         }
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) {
-            AuthModal(() => generateBtn.click());
-            return;
-        }
-
         hero.classList.add('opacity-0', 'scale-95', '-translate-y-10', 'pointer-events-none');
         generateBtn.disabled = true;
         generateBtn.innerHTML = `<span class="animate-spin inline-block mr-2 text-black">◌</span> Generating...`;
 
-        let hadError = false;
-        let capturedRequestId = null;
-        const historyMeta = { prompt, model: selectedModel, aspect_ratio: selectedAr };
-
         try {
-            let res;
-            const qualityLabel = document.getElementById('quality-btn-label')?.textContent;
-            if (imageMode) {
-                const genParams = {
-                    model: selectedModel,
-                    images_list: uploadedImageUrls,
-                    image_url: uploadedImageUrls[0], // backward compat for single-image models
-                    aspect_ratio: selectedAr,
-                    onRequestId: (rid) => {
-                        capturedRequestId = rid;
-                        savePendingJob({ requestId: rid, studioType: 'image', historyMeta, maxAttempts: 60, interval: 2000, submittedAt: Date.now() });
-                    }
-                };
-                if (prompt) genParams.prompt = prompt;
-                const qualityField = getCurrentQualityField(selectedModel);
-                if (qualityField && qualityLabel) genParams[qualityField] = qualityLabel;
-                res = await muapi.generateI2I(genParams);
-            } else {
-                const genParams = {
-                    model: selectedModel,
-                    prompt,
-                    aspect_ratio: selectedAr,
-                    onRequestId: (rid) => {
-                        capturedRequestId = rid;
-                        savePendingJob({ requestId: rid, studioType: 'image', historyMeta, maxAttempts: 60, interval: 2000, submittedAt: Date.now() });
-                    }
-                };
-                const qualityField = getCurrentQualityField(selectedModel);
-                if (qualityField && qualityLabel) genParams[qualityField] = qualityLabel;
-                res = await muapi.generateImage(genParams);
-            }
-
-            console.log('[ImageStudio] Full response:', res);
-
-            if (res && res.url) {
-                if (capturedRequestId) removePendingJob(capturedRequestId);
-                addToHistory({
-                    id: res.id || capturedRequestId || Date.now().toString(),
-                    url: res.url,
-                    prompt: prompt,
-                    model: selectedModel,
-                    aspect_ratio: selectedAr,
-                    timestamp: new Date().toISOString()
-                });
-                showImageInCanvas(res.url);
-            } else {
-                console.error('[ImageStudio] No image URL in response:', res);
-                throw new Error('No image URL returned by API');
-            }
+            await runLocalGeneration(prompt);
         } catch (e) {
-            hadError = true;
-            if (capturedRequestId) removePendingJob(capturedRequestId);
             console.error(e);
             // Restore hero so the page doesn't look broken after a failed generation
             hero.classList.remove('opacity-0', 'scale-95', '-translate-y-10', 'pointer-events-none');
@@ -671,10 +652,13 @@ export function ImageStudio() {
             }, 4000);
         } finally {
             generateBtn.disabled = false;
-            // Only reset the label on success; the catch timeout handles the error case
-            if (!hadError) generateBtn.innerHTML = `Generate ✨`;
+            generateBtn.innerHTML = `Generate ✨`;
         }
     };
+
+    return container;
+}
+
 
     return container;
 }

@@ -1,99 +1,251 @@
 # Open Higgsfield AI: Technical Documentation & Context
 
-This document serves as a comprehensive knowledge base for the Open Higgsfield AI project. It details the architecture, key components, API integration patterns, and state management strategies used in the application.
+This document serves as a comprehensive knowledge base for the Open Higgsfield AI project. It details the architecture, key components, execution model, and system design strategy.
+
+---
 
 ## 1. Project Vision & Overview
 
-**Open Higgsfield AI** is an ambitious open-source project dedicated to **replicating the full functionality of the Higgsfield platform**.
+**Open Higgsfield AI** is an ambitious open-source project dedicated to **building a fully self-hosted, high-performance AI generation platform** inspired by Higgsfield — but without external API dependency.
 
-- **Core Goal:** To build a feature-complete, self-hosted alternative to Higgsfield, starting with **Image Generation** (Nano) and expanding into **Video Generation** (Cinema) and other creative tools.
-- **Current State:** The Image Studio ("Nano Banana Pro" interface) is fully operational, featuring a premium dark-mode UI, history management, and multi-model support via the [Muapi.ai](https://muapi.ai) engine.
-- **Future Direction:** The architecture is designed to scale for video generation, model training interfaces, and advanced editing tools, mirroring the evolving capabilities of Higgsfield.
+- **Core Goal:**  
+  To create a **fully local, GPU-powered AI generation system** capable of image, video, and cinematic workflows — controlled through a modern, extensible UI.
 
-- **Stack:** Vite, Vanilla JavaScript, Tailwind CSS v4.
-- **Repository:** `https://github.com/Anil-matcha/Open-Higgsfield-AI`
-- **Primary Branch:** `main`
+- **Architectural Shift (Critical):**  
+  The project is transitioning away from external APIs (MuAPI) toward a **self-managed inference pipeline**:
+  - Local job system
+  - GPU worker execution
+  - Direct model integration (e.g., Wan, future video models)
 
-## 2. Architecture & File Structure
+- **Current State:**  
+  - Fully functional **UI control plane**
+  - Multi-studio system (Image, Video, Lip Sync, Cinema)
+  - Prompt + parameter orchestration layer complete
+  - Job-based execution model being implemented
 
-The project follows a component-based architecture using vanilla JS, where each component is a function that returns a DOM element.
+- **Future Direction:**  
+  - Local inference (Wan / video models)
+  - Distributed GPU workers
+  - Model abstraction layer (plug-and-play models)
+  - Advanced cinematic workflows and automation
+
+---
+
+## 2. Architecture & System Design
+
+The system is evolving into a **three-layer architecture**:
+
+[ Frontend UI (Control Plane) ]
+↓
+[ Local API / Job System ]
+↓
+[ GPU Workers / Model Execution ]
+
+### Key Principle
+
+> The UI does not generate — it orchestrates.
+
+---
+
+## 3. Updated File Structure
 
 ```tree
 src/
 ├── components/
-│   ├── ImageStudio.js    # Core logic: Prompts, model picking, canvas, history.
-│   ├── Header.js         # Navigation, user settings, auth status.
-│   ├── AuthModal.js      # Modal for capturing and validating the API key.
-│   ├── SettingsModal.js   # Panel for managing settings (clearing API key).
-│   └── Sidebar.js        # (Currently unused/placeholder) Navigation sidebar.
+│   ├── ImageStudio.js      # Prompt + model orchestration (t2i/i2i)
+│   ├── VideoStudio.js      # Video orchestration (t2v/i2v)
+│   ├── LipSyncStudio.js    # Audio-driven generation workflows
+│   ├── CinemaStudio.js     # Cinematic control layer (camera abstraction)
+│   ├── UploadPicker.js     # Asset management
+│   ├── CameraControls.js   # Prompt-enhanced camera system
+│   ├── Header.js
+│   ├── AuthModal.js
+│   ├── SettingsModal.js
+│   └── Sidebar.js
+│
 ├── lib/
-│   ├── muapi.js          # The API Client. Handles auth, submission, and polling.
-│   └── models.js         # Source of truth for model definitions and endpoints.
-├── styles/
-│   ├── global.css        # Global resets, fonts, and animation keyframes.
-│   ├── studio.css        # Specific styles for the studio interface.
-│   └── variables.css     # CSS custom properties (colors, blur amounts).
-├── main.js               # Entry point. Renders the app layout and Header/Studio.
-└── style.css             # Tailwind CSS entry file (imports other CSS).
-```
+│   ├── localApi.js         # NEW: Local job system client (replaces muapi.js)
+│   ├── models.js           # Model definitions (now abstract, not API-bound)
+│   ├── promptUtils.js      # Prompt construction logic
+│   ├── pendingJobs.js      # Job tracking
+│   └── uploadHistory.js    # Asset persistence
+│
+backend/
+├── server.py               # Job system API (FastAPI)
+│
+workers/ (planned)
+├── wan_worker.py           # Wan inference engine
+├── queue.py                # Job queue system
+└── runner.py               # Execution controller
 
-## 3. Key Components & Logic
 
-### `ImageStudio.js` (The Brain)
-This is the most complex component. It handles:
-- **State:** Selected model (`selectedModel`), aspect ratio (`selectedAr`), and generation status.
-- **Prompt Input:** A textarea with auto-grow logic and max-height constraints (fixed in `bf2efdb`).
-- **Dynamic Controls:**
-    - **Model Picker:** Lists models from `models.js`.
-    - **Quality/Resolution:** Only appears for models with explicit resolution support (like `nano-banana-pro`). Hidden for others (like `flux-schnell`).
-- **Generation Flow:**
-    1. Checks for API key in `localStorage`. If missing, opens `AuthModal`.
-    2. Calls `muapi.generateImage()`.
-    3. Polling loop waits for result.
-    4. On success, adds result to `generationHistory` and displays it.
-- **History:**
-    - Stored in `localStorage` key `muapi_history`.
-    - Slides in from the right sidebar.
-    - Thumbnails are clickable to re-view; hover to download.
+⸻
 
-### `muapi.js` (The Engine)
-Encapsulates all communication with `api.muapi.ai`.
-- **Authentication:** Uses `x-api-key` header (NOT `Authorization: Bearer`).
-- **Pattern:** Submit -> Poll.
-    - `POST` to endpoint (e.g., `/api/v1/nano-banana-pro`).
-    - API returns a `request_id`.
-    - `POST` / `GET` loop on `/api/v1/predictions/{id}/result` until status is `completed`, `succeeded`, or `failed`.
-- **Normalization:** The polling response structure varies. `muapi.js` normalizes the result to ensure `url` is always populated (extracting from `outputs[0]` if necessary).
+4. Execution Model (Critical Change)
 
-### `models.js` (The Data)
-Contains the `t2iModels` array.
-- Each model has an `id`, `name`, `inputs` schema (resolution, aspect ratio support), and a crucial `endpoint` property.
-- **Crucial:** The `endpoint` property maps the internal ID to the API path (e.g., `flux-schnell` -> `flux-schnell-image`).
+Previous (Deprecated)
 
-## 4. UI & Styling (Tailwind v4)
+UI → MuAPI → Result
 
-- **Theme:** Dark mode by default (`bg-app-bg` = `#050505`).
-- **Accent:** Neon Yellow-Green (`#d9ff00`) used for primary actions and glows.
-- **Glassmorphism:** Extensive use of `backdrop-blur` and `bg-white/5` or `bg-black/60` for panels, headers, and modals.
-- **Responsiveness:**
-    - **Mobile:** Stacked layout, simplified controls, hidden sidebar.
-    - **Desktop:** Wide canvas, floating prompt bar, side-by-side history.
-- **Animations:** Custom keyframes in `global.css` for `fade-in-up`, `pulse-glow`, etc.
+New System
+UI → Local API → Job Queue → GPU Worker → Result
 
-## 5. Development Setup
+5. Job System Design
 
-- **Vite Proxy:** Local development uses a proxy in `vite.config.js` to route `/api` requests to `https://api.muapi.ai` to avoid CORS issues.
-- **Environment:** `muapi.js` detects `import.meta.env.DEV` to decide whether to use the relative `/api` path (proxy) or the full URL (production).
+All generation is now handled through a job-based architecture:
 
-## 6. Known Gotchas & Fixes
+API Pattern
+	•	POST /jobs → Create job
+	•	GET /jobs/:id → Check status
 
-- **Prompt Bar Overflow:** Fixed by limiting textarea max-height and enabling scrolling.
-- **Flux Resolution Picker:** Fixed logic to only show the resolution picker if the model *explicitly* lists enum values for resolution/megapixels.
-- **Hero Visibility:** The "Nano Banana Pro" hero text is completely hidden (`display: none`) when an image is shown to prevent bleed-through.
-- **API Key Logging:** Debug logs printing the API key were removed for security.
+Job Lifecycle
 
-## 7. Future Roadmap (Potential)
+created → queued → processing → completed / failed
 
-- **Video Generation:** Expand `models.js` and `ImageStudio.js` to support video models (already present in `schema_data` but not wired up).
-- **In-painting/Out-painting:** Add canvas editing tools.
-- **User Accounts:** Move beyond local storage for history.
+{
+  "type": "image_to_video",
+  "prompt": "cinematic close-up of a woman in neon rain",
+  "image_url": "...",
+  "resolution": "720p",
+  "duration": 5
+}
+
+6. Key Components & Logic
+
+UI = Control Plane
+
+The frontend is responsible for:
+	•	Prompt construction
+	•	Model selection
+	•	Input management (image/audio/video)
+	•	Job submission
+	•	Result rendering
+
+localApi.js (New Core Layer)
+
+Replaces muapi.js.
+
+Handles:
+	•	Job submission
+	•	Status polling
+	•	Backend communication
+
+Backend (server.py)
+
+Responsible for:
+	•	Job creation
+	•	Queue management
+	•	Worker coordination
+	•	Returning results
+
+Workers (Planned)
+
+Responsible for:
+	•	Loading models (Wan, etc.)
+	•	Running inference
+	•	Saving outputs
+	•	Updating job status
+
+⸻
+
+7. Model Strategy
+
+Models are no longer API endpoints — they are:
+
+Execution configurations
+
+Each model defines:
+	•	Input schema
+	•	Required assets
+	•	Execution pipeline
+	•	Worker compatibility
+
+⸻
+
+8. Cinema System (Advanced Layer)
+
+The Cinema Studio introduces a prompt abstraction system:
+	•	Camera → prompt modifiers
+	•	Lens → visual characteristics
+	•	Aperture → depth of field
+	•	Focal length → perspective
+
+This enables:
+
+Structured cinematic generation instead of raw prompting
+
+⸻
+
+9. UI & Styling
+	•	Tailwind CSS v4
+	•	Dark glassmorphism design
+	•	Responsive multi-studio layout
+	•	Real-time prompt + control feedback
+
+⸻
+
+10. Development Strategy (IMPORTANT)
+
+Phase 1 — Control Plane (No GPU)
+	•	Replace MuAPI
+	•	Implement job system
+	•	Simulate outputs
+	•	Ensure full UI stability
+
+Phase 2 — Execution Layer
+	•	Integrate first local model (Wan)
+	•	Validate pipeline end-to-end
+
+Phase 3 — GPU Scaling
+	•	Deploy workers on GPU infrastructure
+	•	Optimize performance and batching
+
+
+⸻
+
+11. Key Principles
+	•	No external API dependency
+	•	UI ≠ execution
+	•	Everything is a job
+	•	Models are modular
+	•	GPU is only used when system is stable
+
+⸻
+
+12. Future Roadmap
+	•	Wan 2.1 / 2.2 integration
+	•	Multi-model routing system
+	•	Distributed GPU orchestration
+	•	Storyboarding / “Popcorn” system
+	•	Real-time generation pipelines
+	•	Plugin architecture for models
+
+⸻
+
+13. Summary
+
+Open Higgsfield AI is no longer just an interface for AI APIs.
+
+It is becoming:
+
+A fully self-hosted AI generation engine with a cinematic control system
+
+⸻
+---
+
+# 🔥 What this does for you
+
+- aligns your repo with your **new direction**
+- removes confusion about MuAPI
+- clearly defines **control vs execution**
+- makes your project look like a **serious system (because it is)**
+
+---
+
+# Next step
+
+After you paste + commit this:
+
+👉 say **“phase 1 ready”**
+
+and we’ll **wire your frontend to the new job system cleanly (no breakage)**
