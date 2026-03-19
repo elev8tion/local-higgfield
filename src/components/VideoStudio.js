@@ -1,6 +1,18 @@
-import { muapi } from '../lib/muapi.js';
-import { t2vModels, getAspectRatiosForVideoModel, getDurationsForModel, getResolutionsForVideoModel, i2vModels, getAspectRatiosForI2VModel, getDurationsForI2VModel, getResolutionsForI2VModel, v2vModels, getModesForModel } from '../lib/models.js';
-import { AuthModal } from './AuthModal.js';
+import { createTypedJob, resolveJobResultUrl, uploadAsset, waitForJobCompletion } from '../lib/localapi.js';
+import {
+    getAspectRatiosForI2VModel,
+    getAspectRatiosForVideoModel,
+    getCurrentVideoModels,
+    getDefaultVideoModel,
+    getDurationsForI2VModel,
+    getDurationsForModel,
+    getImageToVideoModels,
+    getModesForModel,
+    getResolutionsForI2VModel,
+    getResolutionsForVideoModel,
+    getVideoGenerationModels,
+    getVideoTransformModels
+} from '../lib/modelCatalog.js';
 import { createUploadPicker } from './UploadPicker.js';
 import { savePendingJob, removePendingJob, getPendingJobs } from '../lib/pendingJobs.js';
 
@@ -9,7 +21,10 @@ export function VideoStudio() {
     container.className = 'w-full h-full flex flex-col items-center justify-center bg-app-bg relative p-4 md:p-6 overflow-y-auto custom-scrollbar overflow-x-hidden';
 
     // --- State ---
-    const defaultModel = t2vModels[0];
+    const t2vModels = getVideoGenerationModels();
+    const i2vModels = getImageToVideoModels();
+    const v2vModels = getVideoTransformModels();
+    const defaultModel = getDefaultVideoModel();
     let selectedModel = defaultModel.id;
     let selectedModelName = defaultModel.name;
     let selectedAr = defaultModel.inputs?.aspect_ratio?.default || '16:9';
@@ -25,7 +40,7 @@ export function VideoStudio() {
     let v2vMode = false;   // true = video-to-video tools mode
     let uploadedVideoUrl = null;
 
-    const getCurrentModels = () => v2vMode ? v2vModels : (imageMode ? i2vModels : t2vModels);
+    const getCurrentModels = () => getCurrentVideoModels({ imageMode, v2vMode });
     const getCurrentAspectRatios = (id) => imageMode ? getAspectRatiosForI2VModel(id) : getAspectRatiosForVideoModel(id);
     const getCurrentDurations = (id) => imageMode ? getDurationsForI2VModel(id) : getDurationsForModel(id);
     const getCurrentResolutions = (id) => imageMode ? getResolutionsForI2VModel(id) : getResolutionsForVideoModel(id);
@@ -188,16 +203,10 @@ export function VideoStudio() {
         const file = e.target.files[0];
         if (!file) return;
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) {
-            AuthModal(() => videoFileInput.click());
-            return;
-        }
-
         showVideoSpinner();
         try {
-            const url = await muapi.uploadFile(file);
-            uploadedVideoUrl = url;
+            const { asset } = await uploadAsset(file, { kind: 'video', role: 'source_video' });
+            uploadedVideoUrl = asset.uri;
             showVideoReady(file.name);
 
             // Switch to v2v mode
@@ -814,9 +823,6 @@ export function VideoStudio() {
         const pending = getPendingJobs('video');
         if (!pending.length) return;
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) return; // can't poll without key; jobs remain for next time
-
         const banner = document.createElement('div');
         banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-[#111] border border-white/10 text-white text-sm px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3';
         banner.innerHTML = `<span class="animate-spin text-primary">◌</span> <span class="banner-text">Resuming ${pending.length} pending generation${pending.length > 1 ? 's' : ''}…</span>`;
@@ -824,18 +830,16 @@ export function VideoStudio() {
 
         let remaining = pending.length;
         pending.forEach(async (job) => {
-            const elapsedAttempts = Math.floor((Date.now() - job.submittedAt) / job.interval);
-            const attemptsLeft = Math.max(1, job.maxAttempts - elapsedAttempts);
             try {
-                const result = await muapi.pollForResult(job.requestId, apiKey, attemptsLeft, job.interval);
-                const url = result.outputs?.[0] || result.url || result.output?.url;
+                const result = await waitForJobCompletion(job.jobId, { intervalMs: job.interval, maxAttempts: job.maxAttempts });
+                const url = resolveJobResultUrl(result);
                 if (url) {
-                    addToHistory({ id: job.requestId, url, ...job.historyMeta, timestamp: new Date().toISOString() });
+                    addToHistory({ id: job.jobId, url, ...job.historyMeta, timestamp: new Date().toISOString() });
                 }
             } catch (e) {
-                console.warn('[VideoStudio] Pending job failed on resume:', job.requestId, e.message);
+                console.warn('[VideoStudio] Pending job failed on resume:', job.jobId, e.message);
             } finally {
-                removePendingJob(job.requestId);
+                removePendingJob(job.jobId);
                 remaining--;
                 if (remaining === 0) banner.remove();
                 else banner.querySelector('.banner-text').textContent = `Resuming ${remaining} pending generation${remaining > 1 ? 's' : ''}…`;
@@ -926,83 +930,26 @@ export function VideoStudio() {
             }
         }
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) {
-            AuthModal(() => generateBtn.click());
-            return;
-        }
-
         hero.classList.add('opacity-0', 'scale-95', '-translate-y-10', 'pointer-events-none');
         generateBtn.disabled = true;
         generateBtn.innerHTML = `<span class="animate-spin inline-block mr-2 text-black">◌</span> Generating...`;
 
         let hadError = false;
-        let capturedRequestId = null;
+        let capturedJobId = null;
         const historyMeta = { prompt, model: selectedModel, aspect_ratio: selectedAr, duration: selectedDuration };
 
-        const onRequestId = (rid) => {
-            capturedRequestId = rid;
-            savePendingJob({ requestId: rid, studioType: 'video', historyMeta, maxAttempts: 900, interval: 2000, submittedAt: Date.now() });
-        };
-
         try {
+            let jobType = 'video.generate';
+            const params = { model: selectedModel };
+
             if (v2vMode) {
-                const res = await muapi.processV2V({ model: selectedModel, video_url: uploadedVideoUrl, onRequestId });
-                console.log('[VideoStudio] V2V response:', res);
-                if (res && res.url) {
-                    if (capturedRequestId) removePendingJob(capturedRequestId);
-                    const genId = res.id || capturedRequestId || Date.now().toString();
-                    lastGenerationId = null;
-                    lastGenerationModel = null;
-                    addToHistory({ id: genId, url: res.url, prompt: '', model: selectedModel, timestamp: new Date().toISOString() });
-                    showVideoInCanvas(res.url, selectedModel);
-                } else {
-                    throw new Error('No video URL returned by API');
-                }
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = `Generate ✨`;
-                return;
+                jobType = 'video.transform';
+                params.video_url = uploadedVideoUrl;
             }
-
             if (imageMode) {
-                const i2vParams = {
-                    model: selectedModel,
-                    image_url: uploadedImageUrl,
-                    onRequestId,
-                };
-                if (prompt) i2vParams.prompt = prompt;
-                i2vParams.aspect_ratio = selectedAr;
-                const durations = getCurrentDurations(selectedModel);
-                if (durations.length > 0) i2vParams.duration = selectedDuration;
-                const resolutions = getCurrentResolutions(selectedModel);
-                if (resolutions.length > 0) i2vParams.resolution = selectedResolution;
-                if (selectedQuality) i2vParams.quality = selectedQuality;
-                if (selectedMode) i2vParams.mode = selectedMode;
-
-                const res = await muapi.generateI2V(i2vParams);
-                console.log('[VideoStudio] I2V response:', res);
-
-                if (res && res.url) {
-                    if (capturedRequestId) removePendingJob(capturedRequestId);
-                    const genId = res.id || capturedRequestId || Date.now().toString();
-                    if (selectedModel === 'seedance-v2.0-i2v') {
-                        lastGenerationId = genId;
-                        lastGenerationModel = selectedModel;
-                    } else {
-                        lastGenerationId = null;
-                        lastGenerationModel = null;
-                    }
-                    addToHistory({ id: genId, url: res.url, prompt, model: selectedModel, aspect_ratio: selectedAr, duration: selectedDuration, timestamp: new Date().toISOString() });
-                    showVideoInCanvas(res.url, selectedModel);
-                } else {
-                    throw new Error('No video URL returned by API');
-                }
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = `Generate ✨`;
-                return;
+                jobType = 'video.animate_image';
+                params.image_url = uploadedImageUrl;
             }
-
-            const params = { model: selectedModel, onRequestId };
 
             if (prompt) params.prompt = prompt;
 
@@ -1022,14 +969,15 @@ export function VideoStudio() {
             if (selectedQuality) params.quality = selectedQuality;
             if (selectedMode) params.mode = selectedMode;
 
-            const res = await muapi.generateVideo(params);
+            const { job_id } = await createTypedJob({ type: jobType, prompt, params });
+            capturedJobId = job_id;
+            savePendingJob({ jobId: job_id, studioType: 'video', historyMeta, maxAttempts: 900, interval: 2000, submittedAt: Date.now() });
 
-            console.log('[VideoStudio] Full response:', res);
-
-            if (res && res.url) {
-                if (capturedRequestId) removePendingJob(capturedRequestId);
-                const genId = res.id || capturedRequestId || Date.now().toString();
-                // Store request_id for seedance-v2.0 models (enables Extend button)
+            const job = await waitForJobCompletion(job_id, { intervalMs: 2000, maxAttempts: 900 });
+            const url = resolveJobResultUrl(job);
+            if (url) {
+                removePendingJob(job_id);
+                const genId = job.id || job_id;
                 if (selectedModel === 'seedance-v2.0-t2v' || selectedModel === 'seedance-v2.0-i2v') {
                     lastGenerationId = genId;
                     lastGenerationModel = selectedModel;
@@ -1040,21 +988,20 @@ export function VideoStudio() {
 
                 addToHistory({
                     id: genId,
-                    url: res.url,
+                    url,
                     prompt,
                     model: selectedModel,
                     aspect_ratio: selectedAr,
                     duration: selectedDuration,
                     timestamp: new Date().toISOString()
                 });
-                showVideoInCanvas(res.url, selectedModel);
+                showVideoInCanvas(url, selectedModel);
             } else {
-                console.error('[VideoStudio] No video URL in response:', res);
                 throw new Error('No video URL returned by API');
             }
         } catch (e) {
             hadError = true;
-            if (capturedRequestId) removePendingJob(capturedRequestId);
+            if (capturedJobId) removePendingJob(capturedJobId);
             console.error(e);
             // Restore hero so the page doesn't look broken after a failed generation
             hero.classList.remove('opacity-0', 'scale-95', '-translate-y-10', 'pointer-events-none');

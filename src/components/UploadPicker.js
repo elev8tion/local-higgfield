@@ -1,5 +1,4 @@
-import { muapi } from '../lib/muapi.js';
-import { AuthModal } from './AuthModal.js';
+import { uploadAsset } from '../lib/localapi.js';
 import { getUploadHistory, saveUpload, removeUpload, generateThumbnail } from '../lib/uploadHistory.js';
 
 /**
@@ -13,7 +12,7 @@ import { getUploadHistory, saveUpload, removeUpload, generateThumbnail } from '.
  * @param {number} [options.maxImages=1] - Maximum number of images selectable
  * @returns {{ trigger: HTMLElement, panel: HTMLElement, reset: function, setMaxImages: function }}
  */
-export function createUploadPicker({ anchorContainer, onSelect, onClear, maxImages: initialMaxImages = 1 }) {
+export function createUploadPicker({ anchorContainer, onSelect, onClear, maxImages: initialMaxImages = 1, uploader = uploadAsset }) {
     let panelOpen = false;
     let maxImages = initialMaxImages;
     let selectedEntries = []; // [{ url, thumbnail }, ...]
@@ -318,12 +317,6 @@ export function createUploadPicker({ anchorContainer, onSelect, onClear, maxImag
         const files = Array.from(e.target.files);
         if (!files.length) return;
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) {
-            AuthModal(() => fileInput.click());
-            return;
-        }
-
         showSpinner();
 
         try {
@@ -331,7 +324,7 @@ export function createUploadPicker({ anchorContainer, onSelect, onClear, maxImag
                 // Single mode: upload first file only, replace selection
                 const file = files[0];
                 const [uploadedUrl, thumbnail] = await Promise.all([
-                    muapi.uploadFile(file),
+                    uploader(file, { kind: 'image', role: 'reference_image' }).then((res) => res.asset.uri),
                     generateThumbnail(file)
                 ]);
                 const entry = { id: Date.now().toString(), name: file.name, uploadedUrl, thumbnail, timestamp: new Date().toISOString() };
@@ -347,7 +340,7 @@ export function createUploadPicker({ anchorContainer, onSelect, onClear, maxImag
                 // Upload all in parallel
                 const results = await Promise.all(toUpload.map(async (file) => {
                     const [uploadedUrl, thumbnail] = await Promise.all([
-                        muapi.uploadFile(file),
+                        uploader(file, { kind: 'image', role: 'reference_image' }).then((res) => res.asset.uri),
                         generateThumbnail(file)
                     ]);
                     return { id: Date.now().toString() + Math.random(), name: file.name, uploadedUrl, thumbnail, timestamp: new Date().toISOString() };

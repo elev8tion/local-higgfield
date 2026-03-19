@@ -1,6 +1,7 @@
 import './style.css';
 import { Header } from './components/Header.js';
 import { ImageStudio } from './components/ImageStudio.js';
+import { loadBackendModelCatalog } from './lib/modelCatalog.js';
 
 const app = document.querySelector('#app');
 let contentArea;
@@ -37,6 +38,7 @@ contentArea.className = 'flex-1 relative w-full overflow-hidden flex flex-col bg
 app.appendChild(contentArea);
 
 // Initial Route
+loadBackendModelCatalog().catch(() => {});
 navigate('image');
 
 // Event Listener for Navigation

@@ -1,8 +1,13 @@
 const PENDING_KEY = 'muapi_pending_jobs';
 
+function getPendingId(job) {
+    return job.requestId || job.jobId;
+}
+
 export function savePendingJob(job) {
     try {
-        const jobs = getAllPendingJobs().filter(j => j.requestId !== job.requestId);
+        const jobId = getPendingId(job);
+        const jobs = getAllPendingJobs().filter(j => getPendingId(j) !== jobId);
         jobs.push(job);
         localStorage.setItem(PENDING_KEY, JSON.stringify(jobs));
     } catch (e) {
@@ -12,7 +17,7 @@ export function savePendingJob(job) {
 
 export function removePendingJob(requestId) {
     try {
-        const jobs = getAllPendingJobs().filter(j => j.requestId !== requestId);
+        const jobs = getAllPendingJobs().filter(j => getPendingId(j) !== requestId);
         localStorage.setItem(PENDING_KEY, JSON.stringify(jobs));
     } catch (e) {
         console.warn('[PendingJobs] Failed to remove:', e);

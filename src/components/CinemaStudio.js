@@ -1,8 +1,6 @@
-
-import { muapi } from '../lib/muapi.js';
+import { createTypedJob, getApiBaseUrl, getJob } from '../lib/localapi.js';
 import { CameraControls } from './CameraControls.js';
 import { buildNanoBananaPrompt, CAMERA_MAP, LENS_MAP } from '../lib/promptUtils.js';
-import { AuthModal } from './AuthModal.js';
 
 export function CinemaStudio() {
     const container = document.createElement('div');
@@ -417,12 +415,6 @@ export function CinemaStudio() {
         const basePrompt = textarea.value.trim();
         if (!basePrompt) return;
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) {
-            AuthModal(() => generateBtn.click());
-            return;
-        }
-
         generateBtn.disabled = true;
         generateBtn.innerHTML = "SHOOTING...";
 
@@ -436,18 +428,40 @@ export function CinemaStudio() {
         );
 
         try {
-            const res = await muapi.generateImage({
-                model: 'nano-banana-pro',
+            const { job_id } = await createTypedJob({
+                type: 'image.generate',
                 prompt: finalPrompt,
-                aspect_ratio: currentSettings.aspect_ratio,
-                resolution: (resBtn.dataset.value || '1k').toLowerCase(),
-                negative_prompt: "blurry, low quality, distortion, bad composition"
+                params: {
+                    model: 'cinema-image',
+                    aspect_ratio: currentSettings.aspect_ratio,
+                    resolution: (resBtn.dataset.value || '1k').toLowerCase(),
+                    negative_prompt: "blurry, low quality, distortion, bad composition",
+                    cinema: {
+                        camera: currentSettings.camera,
+                        lens: currentSettings.lens,
+                        focal: currentSettings.focal,
+                        aperture: currentSettings.aperture
+                    }
+                }
             });
 
-            if (res && res.url) {
+            let resultUrl = null;
+            while (!resultUrl) {
+                const job = await getJob(job_id);
+                if (job.status === 'completed' && job.result?.output_path) {
+                    resultUrl = `${getApiBaseUrl()}/outputs/${job.result.output_path.split('/').pop()}`;
+                    break;
+                }
+                if (job.status === 'failed') {
+                    throw new Error(job.error || 'Generation failed');
+                }
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+
+            if (resultUrl) {
                 // Save to history
                 addToHistory({
-                    url: res.url,
+                    url: resultUrl,
                     timestamp: Date.now(),
                     settings: {
                         prompt: basePrompt,
@@ -456,7 +470,7 @@ export function CinemaStudio() {
                     }
                 });
 
-                showCanvas(res.url);
+                showCanvas(resultUrl);
             } else {
                 throw new Error('No Data');
             }

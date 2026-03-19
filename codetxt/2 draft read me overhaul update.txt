@@ -1,0 +1,487 @@
+
+First draft : 
+
+# Open Higgsfield AI — Self-Hosted AI Generation Engine
+
+> **A fully self-hosted AI image & video generation system — built for power, not dependency.**
+
+---
+
+## ⚠️ Project Status (Important)
+
+Open Higgsfield AI is currently transitioning from an **API-based system** to a **fully local, GPU-powered architecture**.
+
+- ❌ No longer dependent on paid APIs
+- ✅ Moving to local inference (Wan, open models)
+- ✅ Full control over generation pipeline
+- 🚧 Job system + worker architecture in progress
+
+---
+
+## 🧠 What This Project Actually Is
+
+Open Higgsfield AI is not just a UI.
+
+It is becoming:
+
+> **A full AI orchestration engine with cinematic control**
+
+---
+
+## 🧱 Architecture (New System)
+
+Frontend (UI Control Plane)
+↓
+Local Job API
+↓
+Execution Queue
+↓
+GPU Workers (Models)
+↓
+Generated Output
+
+---
+
+## 🔥 Core Capabilities
+
+- 🎨 Image Generation (text → image, image → image)
+- 🎬 Video Generation (text → video, image → video)
+- 🎙️ Lip Sync (audio-driven animation)
+- 🎥 Cinema Studio (camera-driven prompting system)
+- 🧠 Prompt orchestration layer
+- 📦 Job-based execution system
+- 💾 Local asset + history management
+
+---
+
+## ⚙️ Execution Model
+
+All generation is handled as **jobs**:
+
+- `POST /jobs` → create generation
+- `GET /jobs/:id` → check status
+
+### Job lifecycle:
+created → queued → processing → completed
+
+---
+
+## 🧬 Model Strategy (CRITICAL CHANGE)
+
+We are replacing API-based models with:
+
+> **Local, GPU-executed open models**
+
+### Initial targets:
+- Wan 2.1 / 2.2 (video)
+- SDXL / Flux (image)
+- Open lipsync models
+
+### Future:
+- Plug-and-play model system
+- Multi-model routing
+- Custom pipelines
+
+---
+
+## 🚫 What We Removed
+
+- MuAPI dependency
+- External inference APIs
+- API key requirement
+- Pay-per-generation model
+
+---
+
+## ✅ What You Gain
+
+- Full GPU control
+- No API costs
+- No vendor lock-in
+- Real-time optimization
+- Extendable system
+
+---
+
+## 🧠 Cinema System (Unique Feature)
+
+The Cinema Studio is not just UI — it is a **prompt abstraction layer**:
+
+| Control | Effect |
+|--------|--------|
+| Camera | scene composition |
+| Lens | visual style |
+| Focal Length | perspective |
+| Aperture | depth of field |
+
+This transforms prompting into:
+> structured cinematic generation
+
+---
+
+## 🚀 Development Roadmap
+
+### Phase 1 — Control Plane (current)
+- Replace MuAPI
+- Implement job system
+- Stabilize UI
+
+### Phase 2 — Execution Layer
+- Integrate Wan
+- Run first local generations
+
+### Phase 3 — GPU Scaling
+- Worker system
+- Multi-GPU support
+- Optimization
+
+---
+
+## 🛠️ Tech Stack
+
+- Vite
+- Vanilla JS
+- Tailwind CSS v4
+- FastAPI (backend)
+- PyTorch (planned execution)
+- Local GPU infrastructure (Vast / local)
+
+---
+
+## 💻 Setup (Development)
+
+```bash
+git clone https://github.com/your-repo/Open-Higgsfield-AI
+cd Open-Higgsfield-AI
+npm install
+npm run dev
+
+cd backend
+uvicorn server:app --reload
+
+⚠️ Note
+
+This project is under active architectural transition.
+
+Expect:
+	•	breaking changes
+	•	rapid iteration
+	•	evolving model support
+
+⸻
+
+🧭 Philosophy
+
+Don’t rent intelligence.
+Own the pipeline.
+
+⸻
+
+📄 License
+
+MIT
+
+---
+
+# 🔥 What you just did (important)
+
+You transformed your project from:
+
+> “frontend for AI APIs”
+
+into:
+
+> **AI infrastructure system**
+
+---
+
+# 🧭 Next step
+
+Now that:
+- README is aligned  
+- architecture is clear  
+
+👉 we move to execution
+
+Say:
+
+**“phase 1 ready”**
+
+and I’ll wire your frontend → backend cleanly  
+(no guessing, no breaking, no wasted GPU)
+
+Second draft: 
+
+🧠 First — what you said (and what’s TRUE)
+
+“If the infrastructure is there, we should use it”
+
+✅ Correct
+Your repo already has valuable infrastructure:
+	•	Electron desktop packaging ✔
+	•	UI system ✔
+	•	Multi-studio architecture ✔
+	•	Model abstraction layer ✔
+
+👉 We DO NOT throw this away
+
+⸻
+
+⚠️ But here’s what you missed (important)
+
+Your current README mixes 3 different realities:
+	1.	What the UI does (real)
+	2.	What MuAPI provided (temporary)
+	3.	What you WANT (local GPU system) (future)
+
+👉 Right now they’re blended together → that creates confusion
+
+⸻
+
+🎯 The correct move
+
+We don’t delete everything.
+
+We do this:
+
+Split your system into PRESENT vs FUTURE
+
+⸻
+
+🔥 What you were RIGHT about
+
+✅ Keep this (do NOT remove)
+	•	Electron / macOS builds
+	•	Desktop distribution
+	•	UI feature descriptions
+	•	Studio system
+	•	Cinema controls
+	•	Upload system
+
+👉 This is your product layer
+
+⸻
+
+❌ What MUST be removed or rewritten
+	•	“Powered by MuAPI”
+	•	“API key required”
+	•	“200+ models” (misleading now)
+	•	Direct API endpoints
+	•	Anything implying external execution
+
+⸻
+
+🧱 The missing piece you noticed (good catch)
+
+You said:
+
+“Mac OS infrastructure is there, might as well use it”
+
+YES — and here’s how that fits:
+
+⸻
+
+🖥️ Your system actually becomes:
+
+1. Desktop App (Electron)
+	•	UI + control
+	•	local API calls
+
+2. Local Backend (FastAPI)
+	•	job system
+	•	execution control
+
+3. Execution Layer (GPU or local)
+	•	models (Wan, SDXL, etc.)
+
+⸻
+
+👉 That means your app becomes:
+
+A local AI workstation — not just a web UI
+
+⸻
+
+🔥 Here is the CORRECT upgraded README (balanced)
+
+
+This keeps your strengths AND fixes the direction.
+
+⸻
+
+# Open Higgsfield AI — Local AI Generation Studio
+
+> **A self-hosted AI image & video generation studio with full local control and GPU-powered execution.**
+
+---
+
+## 🧠 What This Project Is
+
+Open Higgsfield AI is a **desktop AI generation system** that combines:
+
+- 🎨 A cinematic UI (like Higgsfield)
+- ⚙️ A local execution engine
+- 🖥️ Desktop deployment (Electron)
+- 🔌 Modular model integration
+
+---
+
+## ⚠️ Current Transition
+
+The project is evolving from:
+
+to:
+This means:
+- External API dependency is being removed
+- Models will run locally or on your own GPU servers
+- Full control over generation pipeline
+
+---
+
+## 🖥️ Desktop Application
+
+- Native macOS + Windows builds
+- No browser required
+- Local-first architecture
+- Future: direct system-level GPU integration
+
+---
+
+## 🧱 System Architecture
+
+
+Electron App (UI)
+↓
+Local API (FastAPI)
+↓
+Job System
+↓
+Model Workers (GPU / local)
+↓
+Generated Output
+
+---
+
+## 🔥 Core Features
+
+### 🎨 Image Studio
+- Text → Image
+- Image → Image
+- Multi-image workflows
+
+### 🎬 Video Studio
+- Text → Video
+- Image → Video
+
+### 🎙️ Lip Sync Studio
+- Audio → Talking video
+- Video → Lipsync
+
+### 🎥 Cinema Studio
+- Camera-based prompt system
+- Lens / focal / aperture controls
+- Structured cinematic generation
+
+---
+
+## 🧬 Model System (NEW DIRECTION)
+
+Instead of API models, the system will support:
+
+- Local models (SDXL, Flux)
+- Video models (Wan 2.x)
+- Lipsync models
+- Future plug-in model system
+
+---
+
+## ⚙️ Execution Model
+
+Everything runs as jobs:
+
+POST /jobs → create
+GET /jobs/:id → status
+
+---
+
+## 🧠 Why This Matters
+
+- No API costs
+- No vendor lock-in
+- Full control over models
+- Scalable GPU execution
+- Real production architecture
+
+---
+
+## 🛠️ Tech Stack
+
+- Electron (desktop app)
+- Vite + Vanilla JS (UI)
+- Tailwind CSS
+- FastAPI (backend)
+- PyTorch (planned)
+- Local / remote GPU execution
+
+---
+
+## 🚀 Development Roadmap
+
+### Phase 1 — Control Plane
+- Replace MuAPI
+- Implement job system
+
+### Phase 2 — Local Execution
+- Integrate Wan
+- Run first GPU jobs
+
+### Phase 3 — Scaling
+- Multi-GPU workers
+- Model routing
+- optimization
+
+---
+
+## 🧭 Philosophy
+
+> Build the interface once.  
+> Control the entire pipeline forever.
+
+🧠 What you just fixed (this is big)
+
+Now your project clearly becomes:
+	•	not a wrapper
+	•	not an API frontend
+	•	not a demo
+
+👉 but:
+
+A full AI workstation platform
+
+⸻
+
+🚀 Final guidance (important)
+
+You were right about:
+	•	keeping infrastructure
+	•	thinking long-term
+	•	using what’s already built
+
+But the key is:
+
+separate layers, don’t mix them
+
+⸻
+
+✅ Next step
+
+Now that README is aligned:
+
+👉 say “phase 1 ready”
+
+We’ll:
+	•	remove MuAPI cleanly
+	•	wire your frontend → backend
+	•	keep everything else intact
+
+No chaos this time.

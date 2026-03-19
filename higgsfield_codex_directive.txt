@@ -1,0 +1,135 @@
+Open Higgsfield AI — Codex Agent Directive
+
+CORE MISSION
+
+You are operating as a system-level AI engineer tasked with transforming
+Open Higgsfield AI from: - API-based frontend into: - Fully local +
+GPU-powered AI execution platform
+
+This system must become: - Modular - Scalable - Model-agnostic -
+GPU-native
+
+------------------------------------------------------------------------
+
+SYSTEM ARCHITECTURE (TARGET)
+
+Mac (Frontend UI) ↓ Remote GPU (Vast.ai Backend) ↓ Job System →
+Scheduler → Workers → Models → Outputs
+
+------------------------------------------------------------------------
+
+GPU ROLE (CRITICAL)
+
+The rented GPU is NOT optional. It is:
+
+-   The execution layer
+-   The model runtime environment
+-   The compute engine
+
+All heavy tasks MUST run on GPU: - Image generation - Video generation -
+Lipsync - Future pipelines
+
+Frontend must NEVER execute models.
+
+------------------------------------------------------------------------
+
+CURRENT STATE (IMPORTANT)
+
+Already built:
+
+-   FastAPI backend
+-   Job system (/jobs)
+-   Async worker simulation
+-   File-based output system
+-   Static file serving (/outputs)
+-   Frontend polling system
+-   UI → backend connection
+
+Working pipeline: Prompt → Job → Worker → File → UI
+
+------------------------------------------------------------------------
+
+CURRENT PROBLEMS
+
+-   Local machine too weak for SDXL
+-   Backend must be moved to GPU
+-   Model integration unstable
+-   Codebase lacks structure and documentation
+
+------------------------------------------------------------------------
+
+YOUR TASK (MANDATORY)
+
+You must create internal AGENTS to understand the entire codebase.
+
+Agent System
+
+Create multiple agents:
+
+1.  File Explorer Agent
+    -   Traverse all files
+    -   Map structure
+    -   Output tree
+2.  Code Reader Agent
+    -   Read each file
+    -   Summarize purpose
+    -   Identify dependencies
+3.  System Mapper Agent
+    -   Map data flow
+    -   UI → API → Worker → Output
+4.  Refactor Planner Agent
+    -   Identify weak points
+    -   Propose modular structure
+
+------------------------------------------------------------------------
+
+OUTPUT REQUIREMENT
+
+All findings MUST be written to:
+
+/agents/knowledge.md
+
+This file becomes: - Living documentation - System brain - Source of
+truth
+
+------------------------------------------------------------------------
+
+REFACTOR GOAL
+
+Transform codebase into:
+
+backend/ server.py jobs/ workers/ models/ scheduler/ storage/
+
+frontend/ components/ api/ state/
+
+------------------------------------------------------------------------
+
+STRICT RULES
+
+-   Do NOT break working pipeline
+-   Do NOT remove functionality
+-   Only modularize and improve
+-   Keep system running at all times
+
+------------------------------------------------------------------------
+
+FINAL OBJECTIVE
+
+Build a system that can:
+
+-   Run Flux / Wan / advanced models
+-   Scale across GPUs
+-   Swap models easily
+-   Operate fully locally or on rented GPU
+
+------------------------------------------------------------------------
+
+PHILOSOPHY
+
+Do not build tools.
+
+Build infrastructure.
+
+Do not call APIs.
+
+Own the execution.

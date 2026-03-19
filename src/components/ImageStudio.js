@@ -1,11 +1,9 @@
-import { muapi } from '../lib/muapi.js';
-import { createJob, getJob } from '../lib/localapi.js';
+import { createTypedJob, resolveJobResultUrl, waitForJobCompletion } from '../lib/localapi.js';
 import {
-    t2iModels, getAspectRatiosForModel, getResolutionsForModel, getQualityFieldForModel,
-    i2iModels, getAspectRatiosForI2IModel, getResolutionsForI2IModel, getQualityFieldForI2IModel,
+    getImageGenerationModels, getAspectRatiosForModel, getResolutionsForModel, getQualityFieldForModel,
+    getImageTransformModels, getAspectRatiosForI2IModel, getResolutionsForI2IModel, getQualityFieldForI2IModel,
     getMaxImagesForI2IModel
-} from '../lib/models.js';
-import { AuthModal } from './AuthModal.js';
+} from '../lib/modelCatalog.js';
 import { createUploadPicker } from './UploadPicker.js';
 import { savePendingJob, removePendingJob, getPendingJobs } from '../lib/pendingJobs.js';
 
@@ -14,6 +12,8 @@ export function ImageStudio() {
     container.className = 'w-full h-full flex flex-col items-center justify-center bg-app-bg relative p-4 md:p-6 overflow-y-auto custom-scrollbar overflow-x-hidden';
 
     // --- State ---
+    const t2iModels = getImageGenerationModels();
+    const i2iModels = getImageTransformModels();
     const defaultModel = t2iModels[0];
     let selectedModel = defaultModel.id;
     let selectedModelName = defaultModel.name;
@@ -510,9 +510,6 @@ export function ImageStudio() {
         const pending = getPendingJobs('image');
         if (!pending.length) return;
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) return; // can't poll without key; jobs remain for next time
-
         const banner = document.createElement('div');
         banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-[#111] border border-white/10 text-white text-sm px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3';
         banner.innerHTML = `<span class="animate-spin text-primary">◌</span> <span class="banner-text">Resuming ${pending.length} pending generation${pending.length > 1 ? 's' : ''}…</span>`;
@@ -520,18 +517,16 @@ export function ImageStudio() {
 
         let remaining = pending.length;
         pending.forEach(async (job) => {
-            const elapsedAttempts = Math.floor((Date.now() - job.submittedAt) / job.interval);
-            const attemptsLeft = Math.max(1, job.maxAttempts - elapsedAttempts);
             try {
-                const result = await muapi.pollForResult(job.requestId, apiKey, attemptsLeft, job.interval);
-                const url = result.outputs?.[0] || result.url || result.output?.url;
+                const result = await waitForJobCompletion(job.jobId, { intervalMs: job.interval, maxAttempts: job.maxAttempts });
+                const url = resolveJobResultUrl(result);
                 if (url) {
-                    addToHistory({ id: job.requestId, url, ...job.historyMeta, timestamp: new Date().toISOString() });
+                    addToHistory({ id: job.jobId, url, ...job.historyMeta, timestamp: new Date().toISOString() });
                 }
             } catch (e) {
-                console.warn('[ImageStudio] Pending job failed on resume:', job.requestId, e.message);
+                console.warn('[ImageStudio] Pending job failed on resume:', job.jobId, e.message);
             } finally {
-                removePendingJob(job.requestId);
+                removePendingJob(job.jobId);
                 remaining--;
                 if (remaining === 0) banner.remove();
                 else banner.querySelector('.banner-text').textContent = `Resuming ${remaining} pending generation${remaining > 1 ? 's' : ''}…`;
@@ -580,43 +575,54 @@ export function ImageStudio() {
     };
 
     async function runLocalGeneration(prompt) {
-        const { job_id } = await createJob(prompt, "image");
+        const params = {
+            model: selectedModel,
+            aspect_ratio: selectedAr,
+        };
 
-        let status = "queued";
-        let result = null;
-
-        while (status !== "completed") {
-            const job = await getJob(job_id);
-            status = job.status;
-
-            if (status === "completed") {
-                result = job.result;
-
-                // TEMP UI OUTPUT
-                const fileUrl = "http://localhost:8000/outputs/" + result.output_path.split("/").pop();
-
-                const img = document.createElement("img");
-                img.src = fileUrl;
-                img.style.width = "300px";
-                img.style.marginTop = "10px";
-                img.style.border = "1px solid #00ffcc";
-                img.style.position = "fixed";
-                img.style.bottom = "20px";
-                img.style.left = "20px";
-                img.style.zIndex = "9999";
-                img.style.backgroundColor = "rgba(0,0,0,0.8)";
-                img.style.padding = "10px";
-                img.style.borderRadius = "8px";
-
-                document.body.appendChild(img);
-
-                break;
-            }
-
-            await new Promise(r => setTimeout(r, 1000));
+        const qualityField = getCurrentQualityField(selectedModel);
+        const selectedQualityValue = document.getElementById('quality-btn-label')?.textContent;
+        if (qualityField && selectedQualityValue) {
+            params[qualityField] = selectedQualityValue;
         }
 
-        console.log("RESULT:", result);
+        let jobType = 'image.generate';
+        const input_assets = [];
+
+        if (imageMode) {
+            jobType = 'image.transform';
+            params.input_image_urls = uploadedImageUrls;
+            uploadedImageUrls.forEach((url) => {
+                input_assets.push({ kind: 'image', uri: url, role: 'reference_image' });
+            });
+        }
+
+        const { job_id } = await createTypedJob({
+            type: jobType,
+            prompt,
+            params,
+            input_assets,
+        });
+
+        savePendingJob({ jobId: job_id, studioType: 'image', historyMeta: { prompt, model: selectedModel, aspect_ratio: selectedAr }, maxAttempts: 900, interval: 1000, submittedAt: Date.now() });
+        const job = await waitForJobCompletion(job_id, { intervalMs: 1000, maxAttempts: 900 });
+        removePendingJob(job_id);
+
+        const fileUrl = resolveJobResultUrl(job);
+        if (!fileUrl) {
+            throw new Error('No image URL returned by backend');
+        }
+
+        addToHistory({
+            id: job_id,
+            url: fileUrl,
+            prompt,
+            model: selectedModel,
+            aspect_ratio: selectedAr,
+            timestamp: new Date().toISOString()
+        });
+
+        showImageInCanvas(fileUrl);
     }
 
     // ==========================================
@@ -655,10 +661,6 @@ export function ImageStudio() {
             generateBtn.innerHTML = `Generate ✨`;
         }
     };
-
-    return container;
-}
-
 
     return container;
 }

@@ -1,6 +1,12 @@
-import { muapi } from '../lib/muapi.js';
-import { lipsyncModels, imageLipSyncModels, videoLipSyncModels, getLipSyncModelById, getResolutionsForLipSyncModel } from '../lib/models.js';
-import { AuthModal } from './AuthModal.js';
+import { createTypedJob, resolveJobResultUrl, uploadAsset, waitForJobCompletion } from '../lib/localapi.js';
+import {
+    getCurrentLipSyncModels,
+    getDefaultLipSyncModel,
+    getLipSyncModelById,
+    getLipsyncImageModels,
+    getLipsyncVideoModels,
+    getResolutionsForLipSyncModel
+} from '../lib/modelCatalog.js';
 import { createUploadPicker } from './UploadPicker.js';
 import { savePendingJob, removePendingJob, getPendingJobs } from '../lib/pendingJobs.js';
 
@@ -11,16 +17,18 @@ export function LipSyncStudio() {
     // --- State ---
     // 'image' mode: portrait image + audio → video
     // 'video' mode: existing video + audio → lipsync video
+    const imageLipSyncModels = getLipsyncImageModels();
+    const videoLipSyncModels = getLipsyncVideoModels();
     let inputMode = 'image';
-    let selectedModel = imageLipSyncModels[0].id;
-    let selectedResolution = imageLipSyncModels[0].inputs?.resolution?.default || '480p';
+    let selectedModel = getDefaultLipSyncModel('image').id;
+    let selectedResolution = getDefaultLipSyncModel('image').inputs?.resolution?.default || '480p';
     let uploadedImageUrl = null;
     let uploadedVideoUrl = null;
     let uploadedAudioUrl = null;
     let dropdownOpen = null;
 
-    const getCurrentModels = () => inputMode === 'image' ? imageLipSyncModels : videoLipSyncModels;
-    const getCurrentModel = () => lipsyncModels.find(m => m.id === selectedModel);
+    const getCurrentModels = () => getCurrentLipSyncModels(inputMode);
+    const getCurrentModel = () => getLipSyncModelById(selectedModel);
 
     // ==========================================
     // 1. HERO SECTION
@@ -168,11 +176,10 @@ export function LipSyncStudio() {
     videoFileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) { AuthModal(() => videoFileInput.click()); return; }
         showVideoSpinner();
         try {
-            uploadedVideoUrl = await muapi.uploadFile(file);
+            const { asset } = await uploadAsset(file, { kind: 'video', role: 'source_video' });
+            uploadedVideoUrl = asset.uri;
             showVideoReady(file.name);
         } catch (err) { showVideoIcon(); alert(`Video upload failed: ${err.message}`); }
         videoFileInput.value = '';
@@ -236,11 +243,10 @@ export function LipSyncStudio() {
     audioFileInput.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) { AuthModal(() => audioFileInput.click()); return; }
         showAudioSpinner();
         try {
-            uploadedAudioUrl = await muapi.uploadFile(file);
+            const { asset } = await uploadAsset(file, { kind: 'audio', role: 'source_audio' });
+            uploadedAudioUrl = asset.uri;
             showAudioReady(file.name);
         } catch (err) { showAudioIcon(); alert(`Audio upload failed: ${err.message}`); }
         audioFileInput.value = '';
@@ -587,23 +593,19 @@ export function LipSyncStudio() {
     (async () => {
         const pending = getPendingJobs('lipsync');
         if (!pending.length) return;
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) return;
         const banner = document.createElement('div');
         banner.className = 'fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-[#111] border border-white/10 text-white text-sm px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3';
         banner.innerHTML = `<span class="animate-spin text-primary">◌</span> <span class="banner-text">Resuming ${pending.length} pending generation${pending.length > 1 ? 's' : ''}…</span>`;
         document.body.appendChild(banner);
         let remaining = pending.length;
         pending.forEach(async (job) => {
-            const elapsedAttempts = Math.floor((Date.now() - job.submittedAt) / job.interval);
-            const attemptsLeft = Math.max(1, job.maxAttempts - elapsedAttempts);
             try {
-                const result = await muapi.pollForResult(job.requestId, apiKey, attemptsLeft, job.interval);
-                const url = result.outputs?.[0] || result.url || result.output?.url;
-                if (url) addToHistory({ id: job.requestId, url, ...job.historyMeta, timestamp: new Date().toISOString() });
-            } catch (e) { console.warn('[LipSyncStudio] Pending job failed:', job.requestId, e.message); }
+                const result = await waitForJobCompletion(job.jobId, { intervalMs: job.interval, maxAttempts: job.maxAttempts });
+                const url = resolveJobResultUrl(result);
+                if (url) addToHistory({ id: job.jobId, url, ...job.historyMeta, timestamp: new Date().toISOString() });
+            } catch (e) { console.warn('[LipSyncStudio] Pending job failed:', job.jobId, e.message); }
             finally {
-                removePendingJob(job.requestId);
+                removePendingJob(job.jobId);
                 remaining--;
                 if (remaining === 0) banner.remove();
                 else banner.querySelector('.banner-text').textContent = `Resuming ${remaining} pending generation${remaining > 1 ? 's' : ''}…`;
@@ -667,56 +669,52 @@ export function LipSyncStudio() {
             return;
         }
 
-        const apiKey = localStorage.getItem('muapi_key');
-        if (!apiKey) { AuthModal(() => generateBtn.click()); return; }
-
         hero.classList.add('opacity-0', 'scale-95', '-translate-y-10', 'pointer-events-none');
         generateBtn.disabled = true;
         generateBtn.innerHTML = `<span class="animate-spin inline-block mr-2 text-black">◌</span> Generating...`;
 
         let hadError = false;
-        let capturedRequestId = null;
+        let capturedJobId = null;
         const historyMeta = { prompt, model: selectedModel };
 
-        const onRequestId = (rid) => {
-            capturedRequestId = rid;
-            savePendingJob({ requestId: rid, studioType: 'lipsync', historyMeta, maxAttempts: 900, interval: 2000, submittedAt: Date.now() });
-        };
-
         try {
-            const lipsyncParams = {
+            const params = {
                 model: selectedModel,
-                audio_url: uploadedAudioUrl,
-                onRequestId
+                audio_url: uploadedAudioUrl
             };
 
             if (inputMode === 'image') {
-                lipsyncParams.image_url = uploadedImageUrl;
+                params.image_url = uploadedImageUrl;
             } else {
-                lipsyncParams.video_url = uploadedVideoUrl;
+                params.video_url = uploadedVideoUrl;
             }
 
-            if (prompt && model?.hasPrompt) lipsyncParams.prompt = prompt;
+            if (prompt && model?.hasPrompt) params.prompt = prompt;
 
             const resolutions = getResolutionsForLipSyncModel(selectedModel);
-            if (resolutions.length > 0) lipsyncParams.resolution = selectedResolution;
+            if (resolutions.length > 0) params.resolution = selectedResolution;
 
-            if (model?.hasSeed) lipsyncParams.seed = -1;
+            if (model?.hasSeed) params.seed = -1;
 
-            const res = await muapi.processLipSync(lipsyncParams);
-            console.log('[LipSyncStudio] Response:', res);
+            const jobType = inputMode === 'image' ? 'lipsync.image_audio' : 'lipsync.video_audio';
+            const { job_id } = await createTypedJob({ type: jobType, prompt, params });
+            capturedJobId = job_id;
+            savePendingJob({ jobId: job_id, studioType: 'lipsync', historyMeta, maxAttempts: 900, interval: 2000, submittedAt: Date.now() });
 
-            if (res && res.url) {
-                if (capturedRequestId) removePendingJob(capturedRequestId);
-                const genId = res.id || capturedRequestId || Date.now().toString();
-                addToHistory({ id: genId, url: res.url, prompt, model: selectedModel, timestamp: new Date().toISOString() });
-                showVideoInCanvas(res.url);
+            const job = await waitForJobCompletion(job_id, { intervalMs: 2000, maxAttempts: 900 });
+            const url = resolveJobResultUrl(job);
+
+            if (url) {
+                removePendingJob(job_id);
+                const genId = job.id || job_id;
+                addToHistory({ id: genId, url, prompt, model: selectedModel, timestamp: new Date().toISOString() });
+                showVideoInCanvas(url);
             } else {
                 throw new Error('No video URL returned by API');
             }
         } catch (e) {
             hadError = true;
-            if (capturedRequestId) removePendingJob(capturedRequestId);
+            if (capturedJobId) removePendingJob(capturedJobId);
             console.error(e);
             hero.classList.remove('opacity-0', 'scale-95', '-translate-y-10', 'pointer-events-none');
             generateBtn.innerHTML = `Error: ${e.message.slice(0, 60)}`;
