@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import time
 import urllib.parse
 import urllib.request
@@ -99,6 +100,9 @@ def _job_context(payload: dict[str, Any], output_path: str) -> dict[str, Any]:
             "image_path": image_path or "",
             "video_path": video_path or "",
             "audio_path": audio_path or "",
+            "comfy_image_name": "",
+            "comfy_video_name": "",
+            "comfy_audio_name": "",
         },
         "resolution": resolution or "",
         "aspect_ratio": aspect_ratio or "",
@@ -111,6 +115,38 @@ def _job_context(payload: dict[str, Any], output_path: str) -> dict[str, Any]:
             "directory": str(output.parent),
         },
     }
+
+
+def _stage_comfy_inputs(context: dict[str, Any]) -> None:
+    input_dir = Path(_env("OPEN_HIGGSFIELD_COMFY_INPUT_DIR", "/workspace/ComfyUI/input"))
+    input_dir.mkdir(parents=True, exist_ok=True)
+
+    assets = context.get("assets", {})
+    if not isinstance(assets, dict):
+        return
+
+    job_id = str(context.get("job_id", "") or context.get("output", {}).get("stem", "") or "job")
+    safe_job_id = re.sub(r"[^a-zA-Z0-9._-]+", "_", job_id).strip("_") or "job"
+
+    for kind in ("image", "video", "audio"):
+        source = str(assets.get(f"{kind}_path", "") or "").strip()
+        if not source:
+            continue
+
+        source_path = Path(source)
+        if not source_path.exists():
+            continue
+
+        suffix = source_path.suffix or {
+            "image": ".png",
+            "video": ".mp4",
+            "audio": ".wav",
+        }[kind]
+        staged_name = f"open_higgsfield_{safe_job_id}_{kind}{suffix}"
+        staged_path = input_dir / staged_name
+        if source_path.resolve() != staged_path.resolve():
+            shutil.copy2(source_path, staged_path)
+        assets[f"comfy_{kind}_name"] = staged_name
 
 
 def _lookup(context: dict[str, Any], key: str) -> Any:
@@ -263,6 +299,7 @@ def execute_comfy_media_runner(
 
     workflow_template, output_node_ids = _load_workflow_template(job_type)
     context = _job_context(payload, output_path)
+    _stage_comfy_inputs(context)
     prompt = _render(workflow_template, context)
     if not isinstance(prompt, dict):
         raise RuntimeError("Rendered Comfy workflow prompt must be a JSON object")
