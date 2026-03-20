@@ -208,7 +208,10 @@ def _load_workflow_template(job_type: str) -> tuple[dict[str, Any], list[str] | 
         output_nodes = metadata.get("output_node_ids") if isinstance(metadata, dict) else None
         return raw["prompt"], output_nodes if isinstance(output_nodes, list) else None
     if isinstance(raw, dict):
-        return raw, None
+        metadata = raw.get("metadata", {})
+        output_nodes = metadata.get("output_node_ids") if isinstance(metadata, dict) else None
+        prompt = {key: value for key, value in raw.items() if key != "metadata"}
+        return prompt, output_nodes if isinstance(output_nodes, list) else None
     raise RuntimeError(f"Unsupported Comfy workflow template shape at {template_path}")
 
 
