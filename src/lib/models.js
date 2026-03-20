@@ -5273,7 +5273,7 @@ export const i2vModels = [
           "16:9",
           "9:16"
         ],
-        "default": "16:9"
+        "default": "9:16"
       },
       "resolution": {
         "type": "string",

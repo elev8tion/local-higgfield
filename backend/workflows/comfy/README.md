@@ -41,6 +41,9 @@ Supported template shapes:
 - `{{job_type}}`
 - `{{resolution}}`
 - `{{aspect_ratio}}`
+- `{{duration}}`
+- `{{fps}}`
+- `{{frame_count}}`
 - `{{width}}`
 - `{{height}}`
 - `{{assets.image_path}}`

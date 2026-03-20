@@ -71,6 +71,10 @@ export function getImageToVideoModels() {
   return i2vModels;
 }
 
+export function getWorkerReadyImageToVideoModels() {
+  return i2vModels.filter((model) => model.id === 'wan2.2-image-to-video');
+}
+
 export function getVideoTransformModels() {
   return v2vModels;
 }
@@ -91,6 +95,10 @@ export function getLipsyncImageModels() {
 
 export function getLipsyncVideoModels() {
   return videoLipSyncModels;
+}
+
+export function getWorkerReadyLipSyncVideoModels() {
+  return videoLipSyncModels.filter((model) => model.id === 'latent-sync');
 }
 
 export function getCurrentLipSyncModels(inputMode = 'image') {

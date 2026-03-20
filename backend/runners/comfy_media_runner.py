@@ -16,6 +16,7 @@ from .common import ensure_parent, find_input_asset, load_payload, resolve_dimen
 PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}")
 DEFAULT_TEMPLATE_ROOT = Path(__file__).resolve().parents[1] / "workflows" / "comfy"
 PREFERRED_MEDIA_KEYS = ("videos", "gifs", "images")
+DEFAULT_VIDEO_FPS = 16
 
 WORKFLOW_ENV_BY_JOB_TYPE = {
     "video.generate": "OPEN_HIGGSFIELD_COMFY_VIDEO_GENERATE_WORKFLOW",
@@ -84,6 +85,9 @@ def _job_context(payload: dict[str, Any], output_path: str) -> dict[str, Any]:
     resolution = str(params.get("resolution", "") or "").strip() or None
     aspect_ratio = str(params.get("aspectRatio", "") or params.get("aspect_ratio", "") or "").strip() or None
     width, height = resolve_dimensions(resolution, aspect_ratio)
+    duration = max(1, int(params.get("duration", 5) or 5))
+    fps = DEFAULT_VIDEO_FPS
+    frame_count = max(17, duration * fps + 1)
 
     image_path = find_input_asset(payload, {"image"})
     video_path = find_input_asset(payload, {"video"})
@@ -109,6 +113,9 @@ def _job_context(payload: dict[str, Any], output_path: str) -> dict[str, Any]:
         },
         "resolution": resolution or "",
         "aspect_ratio": aspect_ratio or "",
+        "duration": duration,
+        "fps": fps,
+        "frame_count": frame_count,
         "width": width,
         "height": height,
         "output": {

@@ -1,11 +1,8 @@
 import { createTypedJob, resolveJobResultUrl, uploadAsset, waitForJobCompletion } from '../lib/localapi.js';
 import {
-    getCurrentLipSyncModels,
-    getDefaultLipSyncModel,
     getLipSyncModelById,
-    getLipsyncImageModels,
-    getLipsyncVideoModels,
-    getResolutionsForLipSyncModel
+    getResolutionsForLipSyncModel,
+    getWorkerReadyLipSyncVideoModels
 } from '../lib/modelCatalog.js';
 import { createUploadPicker } from './UploadPicker.js';
 import { savePendingJob, removePendingJob, getPendingJobs } from '../lib/pendingJobs.js';
@@ -15,19 +12,16 @@ export function LipSyncStudio() {
     container.className = 'w-full h-full flex flex-col items-center justify-center bg-app-bg relative p-4 md:p-6 overflow-y-auto custom-scrollbar overflow-x-hidden';
 
     // --- State ---
-    // 'image' mode: portrait image + audio → video
-    // 'video' mode: existing video + audio → lipsync video
-    const imageLipSyncModels = getLipsyncImageModels();
-    const videoLipSyncModels = getLipsyncVideoModels();
-    let inputMode = 'image';
-    let selectedModel = getDefaultLipSyncModel('image').id;
-    let selectedResolution = getDefaultLipSyncModel('image').inputs?.resolution?.default || '480p';
-    let uploadedImageUrl = null;
+    const videoLipSyncModels = getWorkerReadyLipSyncVideoModels();
+    const defaultModel = videoLipSyncModels[0];
+    let inputMode = 'video';
+    let selectedModel = defaultModel.id;
+    let selectedResolution = defaultModel.inputs?.resolution?.default || '480p';
     let uploadedVideoUrl = null;
     let uploadedAudioUrl = null;
     let dropdownOpen = null;
 
-    const getCurrentModels = () => getCurrentLipSyncModels(inputMode);
+    const getCurrentModels = () => videoLipSyncModels;
     const getCurrentModel = () => getLipSyncModelById(selectedModel);
 
     // ==========================================
@@ -57,7 +51,7 @@ export function LipSyncStudio() {
             </div>
         </div>
         <h1 class="text-2xl sm:text-4xl md:text-7xl font-black text-white tracking-widest uppercase mb-4 selection:bg-primary selection:text-black text-center px-4">Lip Sync</h1>
-        <p class="text-secondary text-sm font-medium tracking-wide opacity-60">Animate portraits or sync lips to audio with AI</p>
+        <p class="text-secondary text-sm font-medium tracking-wide opacity-60">First-wave worker mode: sync an existing video to uploaded audio</p>
     `;
     container.appendChild(hero);
 
@@ -77,21 +71,8 @@ export function LipSyncStudio() {
 
     const modeLabel = document.createElement('span');
     modeLabel.className = 'text-xs text-muted font-bold uppercase tracking-widest mr-2';
-    modeLabel.textContent = 'Input:';
-
-    const imageModeBtn = document.createElement('button');
-    imageModeBtn.type = 'button';
-    imageModeBtn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition-all border border-primary bg-primary/10 text-primary';
-    imageModeBtn.textContent = '🖼 Portrait Image';
-
-    const videoModeBtn = document.createElement('button');
-    videoModeBtn.type = 'button';
-    videoModeBtn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/10 text-muted hover:border-white/30 hover:text-white';
-    videoModeBtn.textContent = '🎬 Video';
-
+    modeLabel.textContent = 'First wave: video + audio with LatentSync';
     modeToggleRow.appendChild(modeLabel);
-    modeToggleRow.appendChild(imageModeBtn);
-    modeToggleRow.appendChild(videoModeBtn);
     bar.appendChild(modeToggleRow);
 
     // --- Uploads Row ---
@@ -101,16 +82,8 @@ export function LipSyncStudio() {
     // ── Image Upload — uses createUploadPicker (same as VideoStudio) ──
     const imagePicker = createUploadPicker({
         anchorContainer: container,
-        onSelect: ({ url }) => {
-            uploadedImageUrl = url;
-            imageStatusLabel.textContent = '✓ Image ready';
-            imageStatusLabel.className = 'text-primary';
-        },
-        onClear: () => {
-            uploadedImageUrl = null;
-            imageStatusLabel.textContent = 'No image';
-            imageStatusLabel.className = 'text-muted';
-        }
+        onSelect: () => {},
+        onClear: () => {}
     });
     // Size the trigger to match our other buttons
     imagePicker.trigger.className = imagePicker.trigger.className
@@ -271,7 +244,7 @@ export function LipSyncStudio() {
     // mediaStatusLabel: shows image or video status depending on mode
     const mediaStatusLabel = document.createElement('span');
     mediaStatusLabel.className = 'text-muted';
-    mediaStatusLabel.textContent = 'No image';
+    mediaStatusLabel.textContent = 'No video';
 
     const imageStatusLabel = mediaStatusLabel; // alias used in imagePicker callbacks
 
@@ -408,23 +381,12 @@ export function LipSyncStudio() {
     // 4. MODE SWITCHING LOGIC
     // ==========================================
     const updateUIForMode = () => {
-        if (inputMode === 'image') {
-            imageModeBtn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition-all border border-primary bg-primary/10 text-primary';
-            videoModeBtn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/10 text-muted hover:border-white/30 hover:text-white';
-            imagePicker.trigger.classList.remove('hidden');
-            videoPickerBtn.classList.add('hidden');
-            mediaStatusLabel.textContent = uploadedImageUrl ? '✓ Image ready' : 'No image';
-            mediaStatusLabel.className = uploadedImageUrl ? 'text-primary' : 'text-muted';
-        } else {
-            videoModeBtn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition-all border border-primary bg-primary/10 text-primary';
-            imageModeBtn.className = 'px-4 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/10 text-muted hover:border-white/30 hover:text-white';
-            videoPickerBtn.classList.remove('hidden');
-            imagePicker.trigger.classList.add('hidden');
-            mediaStatusLabel.textContent = uploadedVideoUrl ? '✓ Video ready' : 'No video';
-            mediaStatusLabel.className = uploadedVideoUrl ? 'text-primary' : 'text-muted';
-        }
+        videoPickerBtn.classList.remove('hidden');
+        imagePicker.trigger.classList.add('hidden');
+        mediaStatusLabel.textContent = uploadedVideoUrl ? '✓ Video ready' : 'No video';
+        mediaStatusLabel.className = uploadedVideoUrl ? 'text-primary' : 'text-muted';
 
-        // Switch to first model of new mode
+        // Keep the single worker-ready model selected.
         const models = getCurrentModels();
         selectedModel = models[0].id;
         document.getElementById('ls-model-btn-label').textContent = models[0].name;
@@ -443,26 +405,14 @@ export function LipSyncStudio() {
         textarea.style.display = models[0].hasPrompt ? '' : 'none';
     };
 
-    imageModeBtn.onclick = () => {
-        if (inputMode === 'image') return;
-        inputMode = 'image';
-        uploadedVideoUrl = null;
-        showVideoIcon();
-        updateUIForMode();
-    };
-
-    videoModeBtn.onclick = () => {
-        if (inputMode === 'video') return;
-        inputMode = 'video';
-        uploadedImageUrl = null;
-        imagePicker.reset();
-        updateUIForMode();
-    };
-
     // Hide resolution if first model has none
     if (getResolutionsForLipSyncModel(selectedModel).length === 0) {
         resolutionBtn.classList.add('hidden');
     }
+    if (videoLipSyncModels.length <= 1) {
+        modelBtn.classList.add('hidden');
+    }
+    updateUIForMode();
 
     // ==========================================
     // 6. CANVAS AREA + HISTORY
@@ -635,13 +585,11 @@ export function LipSyncStudio() {
         promptWrapper.classList.remove('hidden', 'opacity-40');
         textarea.value = '';
         // Reset uploads
-        imagePicker.reset();
-        uploadedImageUrl = null;
         uploadedVideoUrl = null;
         uploadedAudioUrl = null;
         showVideoIcon();
         showAudioIcon();
-        mediaStatusLabel.textContent = inputMode === 'image' ? 'No image' : 'No video';
+        mediaStatusLabel.textContent = 'No video';
         mediaStatusLabel.className = 'text-muted';
         audioStatusLabel.textContent = 'No audio';
         audioStatusLabel.className = 'text-muted';
@@ -660,11 +608,7 @@ export function LipSyncStudio() {
             alert('Please upload an audio file first.');
             return;
         }
-        if (inputMode === 'image' && !uploadedImageUrl) {
-            alert('Please upload a portrait image first.');
-            return;
-        }
-        if (inputMode === 'video' && !uploadedVideoUrl) {
+        if (!uploadedVideoUrl) {
             alert('Please upload a source video first.');
             return;
         }
@@ -680,14 +624,9 @@ export function LipSyncStudio() {
         try {
             const params = {
                 model: selectedModel,
-                audio_url: uploadedAudioUrl
+                audio_url: uploadedAudioUrl,
+                video_url: uploadedVideoUrl
             };
-
-            if (inputMode === 'image') {
-                params.image_url = uploadedImageUrl;
-            } else {
-                params.video_url = uploadedVideoUrl;
-            }
 
             if (prompt && model?.hasPrompt) params.prompt = prompt;
 
@@ -696,8 +635,7 @@ export function LipSyncStudio() {
 
             if (model?.hasSeed) params.seed = -1;
 
-            const jobType = inputMode === 'image' ? 'lipsync.image_audio' : 'lipsync.video_audio';
-            const { job_id } = await createTypedJob({ type: jobType, prompt, params });
+            const { job_id } = await createTypedJob({ type: 'lipsync.video_audio', prompt, params });
             capturedJobId = job_id;
             savePendingJob({ jobId: job_id, studioType: 'lipsync', historyMeta, maxAttempts: 900, interval: 2000, submittedAt: Date.now() });
 

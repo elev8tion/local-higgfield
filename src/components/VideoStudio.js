@@ -3,15 +3,12 @@ import {
     getAspectRatiosForI2VModel,
     getAspectRatiosForVideoModel,
     getCurrentVideoModels,
-    getDefaultVideoModel,
     getDurationsForI2VModel,
     getDurationsForModel,
-    getImageToVideoModels,
     getModesForModel,
     getResolutionsForI2VModel,
     getResolutionsForVideoModel,
-    getVideoGenerationModels,
-    getVideoTransformModels
+    getWorkerReadyImageToVideoModels
 } from '../lib/modelCatalog.js';
 import { createUploadPicker } from './UploadPicker.js';
 import { savePendingJob, removePendingJob, getPendingJobs } from '../lib/pendingJobs.js';
@@ -21,10 +18,10 @@ export function VideoStudio() {
     container.className = 'w-full h-full flex flex-col items-center justify-center bg-app-bg relative p-4 md:p-6 overflow-y-auto custom-scrollbar overflow-x-hidden';
 
     // --- State ---
-    const t2vModels = getVideoGenerationModels();
-    const i2vModels = getImageToVideoModels();
-    const v2vModels = getVideoTransformModels();
-    const defaultModel = getDefaultVideoModel();
+    const t2vModels = [];
+    const i2vModels = getWorkerReadyImageToVideoModels();
+    const v2vModels = [];
+    const defaultModel = i2vModels[0];
     let selectedModel = defaultModel.id;
     let selectedModelName = defaultModel.name;
     let selectedAr = defaultModel.inputs?.aspect_ratio?.default || '16:9';
@@ -36,7 +33,7 @@ export function VideoStudio() {
     let lastGenerationModel = null;
     let dropdownOpen = null;
     let uploadedImageUrl = null;
-    let imageMode = false; // false = t2v models, true = i2v models
+    let imageMode = true; // first-wave worker path is image-to-video only
     let v2vMode = false;   // true = video-to-video tools mode
     let uploadedVideoUrl = null;
 
@@ -46,6 +43,12 @@ export function VideoStudio() {
     const getCurrentResolutions = (id) => imageMode ? getResolutionsForI2VModel(id) : getResolutionsForVideoModel(id);
     const getCurrentModes = (id) => getModesForModel(id);
     const getCurrentModel = () => getCurrentModels().find(m => m.id === selectedModel);
+    const getPreferredAspectRatio = (ratios) => {
+        if (!Array.isArray(ratios) || ratios.length === 0) return '';
+        if (ratios.includes(selectedAr)) return selectedAr;
+        if (ratios.includes('9:16')) return '9:16';
+        return ratios[0];
+    };
     const getQualitiesForModel = (id) => {
         const model = getCurrentModels().find(m => m.id === id);
         return model?.inputs?.quality?.enum || [];
@@ -74,7 +77,7 @@ export function VideoStudio() {
              </div>
         </div>
         <h1 class="text-2xl sm:text-4xl md:text-7xl font-black text-white tracking-widest uppercase mb-4 selection:bg-primary selection:text-black text-center px-4">Video Studio</h1>
-        <p class="text-secondary text-sm font-medium tracking-wide opacity-60">Animate images into stunning AI videos with motion effects</p>
+        <p class="text-secondary text-sm font-medium tracking-wide opacity-60">First-wave worker mode: animate a single image with Wan</p>
     `;
     container.appendChild(hero);
 
@@ -114,12 +117,12 @@ export function VideoStudio() {
         },
         onClear: () => {
             uploadedImageUrl = null;
-            imageMode = false;
-            selectedModel = t2vModels[0].id;
-            selectedModelName = t2vModels[0].name;
+            imageMode = true;
+            selectedModel = i2vModels[0].id;
+            selectedModelName = i2vModels[0].name;
             document.getElementById('v-model-btn-label').textContent = selectedModelName;
             updateControlsForModel(selectedModel);
-            textarea.placeholder = 'Describe the video you want to create';
+            textarea.placeholder = 'Upload a start frame image, then describe the motion or effect';
             textarea.disabled = false;
         }
     });
@@ -182,11 +185,11 @@ export function VideoStudio() {
         uploadedVideoUrl = null;
         v2vMode = false;
         showVideoIcon();
-        selectedModel = t2vModels[0].id;
-        selectedModelName = t2vModels[0].name;
+        selectedModel = i2vModels[0].id;
+        selectedModelName = i2vModels[0].name;
         document.getElementById('v-model-btn-label').textContent = selectedModelName;
         updateControlsForModel(selectedModel);
-        textarea.placeholder = 'Describe the video you want to create';
+        textarea.placeholder = 'Upload a start frame image, then describe the motion or effect';
         textarea.disabled = false;
     };
 
@@ -230,10 +233,10 @@ export function VideoStudio() {
         videoFileInput.value = '';
     };
 
-    topRow.appendChild(videoPickerBtn);
+    videoPickerBtn.classList.add('hidden');
 
     const textarea = document.createElement('textarea');
-    textarea.placeholder = 'Describe the video you want to create';
+    textarea.placeholder = 'Upload a start frame image, then describe the motion or effect';
     textarea.className = 'flex-1 bg-transparent border-none text-white text-base md:text-xl placeholder:text-muted focus:outline-none resize-none pt-2.5 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto custom-scrollbar';
     textarea.rows = 1;
     textarea.oninput = () => {
@@ -305,6 +308,9 @@ export function VideoStudio() {
     controlsLeft.appendChild(resolutionBtn);
     controlsLeft.appendChild(qualityBtn);
     controlsLeft.appendChild(modeBtn);
+    if (i2vModels.length <= 1) {
+        modelBtn.classList.add('hidden');
+    }
 
     // Initial visibility (t2v mode)
     const initDurations = getDurationsForModel(defaultModel.id);
@@ -348,7 +354,7 @@ export function VideoStudio() {
         // Aspect ratio
         const availableArs = getCurrentAspectRatios(modelId);
         if (availableArs.length > 0) {
-            selectedAr = availableArs[0];
+            selectedAr = getPreferredAspectRatio(availableArs);
             document.getElementById('v-ar-btn-label').textContent = selectedAr;
             arBtn.style.display = 'flex';
         } else {
@@ -469,7 +475,7 @@ export function VideoStudio() {
                         selectedModelName = m.name;
                         document.getElementById('v-model-btn-label').textContent = selectedModelName;
                         updateControlsForModel(selectedModel);
-                        textarea.placeholder = imageMode ? 'Describe the motion or effect (optional)' : 'Describe the video you want to create';
+                        textarea.placeholder = 'Describe the motion or effect (optional)';
                     }
                     closeDropdown();
                 };
@@ -480,20 +486,16 @@ export function VideoStudio() {
                 list.innerHTML = '';
                 const lf = filter.toLowerCase();
 
-                // Regular generation models (always t2v or i2v, never v2v)
-                const generationModels = imageMode ? i2vModels : t2vModels;
+                // First-wave worker scope: show only the proven image-to-video model.
+                const generationModels = i2vModels;
                 const filteredMain = generationModels
                     .filter(m => m.name.toLowerCase().includes(lf) || m.id.toLowerCase().includes(lf));
-                filteredMain.forEach(m => list.appendChild(makeModelItem(m, false)));
-
-                // Video Tools section
-                const filteredV2V = v2vModels.filter(m => m.name.toLowerCase().includes(lf) || m.id.toLowerCase().includes(lf));
-                if (filteredV2V.length > 0) {
+                if (filteredMain.length > 0) {
                     const sectionLabel = document.createElement('div');
-                    sectionLabel.className = 'text-[10px] font-bold text-orange-400/70 uppercase tracking-widest px-3 py-2 mt-1 border-t border-white/5';
-                    sectionLabel.textContent = 'Video Tools';
+                    sectionLabel.className = 'text-[10px] font-bold text-primary uppercase tracking-widest px-3 py-2';
+                    sectionLabel.textContent = 'Worker-ready';
                     list.appendChild(sectionLabel);
-                    filteredV2V.forEach(m => list.appendChild(makeModelItem(m, true)));
+                    filteredMain.forEach(m => list.appendChild(makeModelItem(m, false)));
                 }
             };
 
@@ -872,15 +874,15 @@ export function VideoStudio() {
         textarea.value = '';
         picker.reset();
         uploadedImageUrl = null;
-        imageMode = false;
+        imageMode = true;
         uploadedVideoUrl = null;
         v2vMode = false;
         showVideoIcon();
-        selectedModel = t2vModels[0].id;
-        selectedModelName = t2vModels[0].name;
+        selectedModel = i2vModels[0].id;
+        selectedModelName = i2vModels[0].name;
         document.getElementById('v-model-btn-label').textContent = selectedModelName;
         updateControlsForModel(selectedModel);
-        textarea.placeholder = 'Describe the video you want to create';
+        textarea.placeholder = 'Upload a start frame image, then describe the motion or effect';
         textarea.disabled = false;
         textarea.focus();
     };
