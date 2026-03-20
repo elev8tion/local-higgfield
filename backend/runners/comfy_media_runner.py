@@ -101,8 +101,11 @@ def _job_context(payload: dict[str, Any], output_path: str) -> dict[str, Any]:
             "video_path": video_path or "",
             "audio_path": audio_path or "",
             "comfy_image_name": "",
+            "comfy_image_path": "",
             "comfy_video_name": "",
+            "comfy_video_path": "",
             "comfy_audio_name": "",
+            "comfy_audio_path": "",
         },
         "resolution": resolution or "",
         "aspect_ratio": aspect_ratio or "",
@@ -147,6 +150,7 @@ def _stage_comfy_inputs(context: dict[str, Any]) -> None:
         if source_path.resolve() != staged_path.resolve():
             shutil.copy2(source_path, staged_path)
         assets[f"comfy_{kind}_name"] = staged_name
+        assets[f"comfy_{kind}_path"] = str(staged_path)
 
 
 def _lookup(context: dict[str, Any], key: str) -> Any:

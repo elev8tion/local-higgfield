@@ -85,7 +85,31 @@ if command -v python3 >/dev/null 2>&1; then
       python3 -m pip install -r "$req" || true
     fi
   done
+
+  echo "[open-higgsfield] installing explicit LatentSync runtime extras"
+  python3 -m pip install \
+    omegaconf \
+    matplotlib \
+    decord \
+    mediapipe \
+    face-alignment || true
 fi
+
+patch_latentsync_node() {
+  local pipeline_file="$CUSTOM_NODES_DIR/comfyui-LatentSync/latentsync/pipelines/lipsync_pipeline.py"
+  local node_file="$CUSTOM_NODES_DIR/comfyui-LatentSync/comfyui_latentsync_node.py"
+
+  if [ -f "$pipeline_file" ]; then
+    perl -0pi -e 's/import shutil\n/import shutil\nimport tempfile\n/; s/temp_dir = "temp"\n        if os\.path\.exists\(temp_dir\):\n            shutil\.rmtree\(temp_dir\)\n        os\.makedirs\(temp_dir, exist_ok=True\)/temp_dir = tempfile.mkdtemp(prefix="latentsync_")/' "$pipeline_file"
+  fi
+
+  if [ -f "$node_file" ]; then
+    perl -0pi -e 's/\n\s*if os\.path\.exists\(video_path\):\n\s*os\.remove\(video_path\)\n\s*print\(f"已清理临时视频文件: \{video_path\}"\)//g' "$node_file"
+  fi
+}
+
+echo "[open-higgsfield] applying LatentSync worker patches"
+patch_latentsync_node
 
 cat >/tmp/open-higgsfield-comfy-env.sh <<EOF
 HF_HOME="$HF_HOME"

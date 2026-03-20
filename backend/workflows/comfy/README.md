@@ -46,6 +46,12 @@ Supported template shapes:
 - `{{assets.image_path}}`
 - `{{assets.video_path}}`
 - `{{assets.audio_path}}`
+- `{{assets.comfy_image_name}}`
+- `{{assets.comfy_image_path}}`
+- `{{assets.comfy_video_name}}`
+- `{{assets.comfy_video_path}}`
+- `{{assets.comfy_audio_name}}`
+- `{{assets.comfy_audio_path}}`
 - `{{output.path}}`
 - `{{output.filename}}`
 - `{{output.stem}}`

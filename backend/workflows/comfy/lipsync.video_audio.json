@@ -1,28 +1,73 @@
 {
   "metadata": {
-    "description": "Starter template for video lipsync via ComfyUI. Replace with your exported LatentSync workflow.",
+    "description": "Proven direct LatentSync workflow for video lipsync via ComfyUI.",
     "output_node_ids": [
       "save_video"
     ]
   },
   "prompt": {
-    "load_video": {
-      "inputs": {
-        "video": "{{assets.video_path}}"
-      },
-      "class_type": "VHS_LoadVideo"
-    },
     "load_audio": {
+      "class_type": "VHS_LoadAudio",
       "inputs": {
-        "audio": "{{assets.audio_path}}"
-      },
-      "class_type": "LoadAudio"
+        "audio_file": "{{assets.comfy_audio_path}}",
+        "seek_seconds": 0,
+        "duration": 0
+      }
+    },
+    "latentsync": {
+      "class_type": "LatentSyncNode",
+      "inputs": {
+        "audio": [
+          "load_audio",
+          0
+        ],
+        "video_path": "{{assets.comfy_video_path}}",
+        "num_inference_steps": "{{params.num_inference_steps}}",
+        "guidance_scale": "{{params.guidance_scale}}",
+        "seed": "{{params.seed}}"
+      }
+    },
+    "load_result_video": {
+      "class_type": "VHS_LoadVideoPath",
+      "inputs": {
+        "video": [
+          "latentsync",
+          0
+        ],
+        "force_rate": 0,
+        "custom_width": 0,
+        "custom_height": 0,
+        "frame_load_cap": 0,
+        "skip_first_frames": 0,
+        "select_every_nth": 1,
+        "format": "None"
+      }
+    },
+    "create_video": {
+      "class_type": "CreateVideo",
+      "inputs": {
+        "images": [
+          "load_result_video",
+          0
+        ],
+        "fps": 25,
+        "audio": [
+          "load_result_video",
+          2
+        ]
+      }
     },
     "save_video": {
+      "class_type": "SaveVideo",
       "inputs": {
-        "filename_prefix": "{{output.stem}}"
-      },
-      "class_type": "VHS_VideoCombine"
+        "video": [
+          "create_video",
+          0
+        ],
+        "filename_prefix": "open_higgsfield/{{output.stem}}",
+        "format": "mp4",
+        "codec": "h264"
+      }
     }
   }
 }
