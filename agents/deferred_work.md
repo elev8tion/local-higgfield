@@ -17,11 +17,18 @@ This file is for work intentionally deferred to save time right now.
 - queue semantics
 - true packaged backend supervision from Electron
 - backend-owned full model registry replacing `src/lib/models.js`
+- richer Comfy bridge support for:
+  - multiple output assets
+  - subtitle/text outputs
+  - websocket progress
+  - cancellation
+  - upload-to-Comfy input-folder flow
 - dedicated post-process job types for:
   - `caption.generate`
   - `lyrics.generate`
   - `video.extend`
   - character replacement as its own explicit feature job
+  - audio-driven creator video as its own explicit feature job
 
 ## Model / Feature Deferred
 

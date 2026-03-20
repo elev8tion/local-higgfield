@@ -40,6 +40,10 @@ This section is the operational tracker. If any older analysis below conflicts w
 - first-day GPU setup assets added under `gpu/`
 - rented GPU persistence checklist drafted in `agents/rented_gpu_persistence.md`
 - ComfyUI-backed runner path added so video and lipsync jobs can target a private remote Comfy template without changing the frontend API
+- Comfy workflow compatibility board drafted in `agents/comfy_compatibility_matrix.md`
+- exact first private Comfy template checklist drafted in `agents/first_private_comfy_template_checklist.md`
+- exact first private Comfy template install manifest drafted in `agents/first_private_comfy_template_install_manifest.md`
+- Vast-specific private Comfy launch sheet drafted in `agents/vast_private_comfy_launch_sheet.md`
 
 ### In Progress
 
@@ -66,7 +70,7 @@ This section is the operational tracker. If any older analysis below conflicts w
 
 ### Current Next Step
 
-- point the `comfy_bridge` runtime profile at a private ComfyUI GPU template, replace the starter workflow JSON files with exported API workflows, and validate one end-to-end video job from the existing chat interface
+- point the `comfy_bridge` runtime profile at a private ComfyUI GPU template, replace the starter workflow JSON files with exported API workflows for `video.animate_image`, `lipsync.video_audio`, and `lipsync.image_audio`, and validate one end-to-end job per workflow from the existing chat interface
 
 ### After That
 
