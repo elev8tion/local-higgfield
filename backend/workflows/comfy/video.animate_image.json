@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "description": "Starter template for image-to-video via ComfyUI. Replace with your exported Wan/LTX workflow.",
+    "output_node_ids": [
+      "save_video"
+    ]
+  },
+  "prompt": {
+    "load_image": {
+      "inputs": {
+        "image": "{{assets.image_path}}"
+      },
+      "class_type": "LoadImage"
+    },
+    "text_prompt": {
+      "inputs": {
+        "text": "{{prompt}}"
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "save_video": {
+      "inputs": {
+        "filename_prefix": "{{output.stem}}"
+      },
+      "class_type": "VHS_VideoCombine"
+    }
+  }
+}

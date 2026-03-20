@@ -122,3 +122,38 @@ Available built-in profiles:
 
 - `local_ffmpeg`
 - `remote_bridge`
+- `comfy_bridge`
+
+## ComfyUI bridge runners
+
+The repo also includes ComfyUI-specific bridge runners:
+
+- `python3 -m backend.runners.comfy_video_runner`
+- `python3 -m backend.runners.comfy_lipsync_runner`
+
+These runners:
+
+1. Load a mapped workflow JSON for the current job type.
+2. Replace `{{...}}` placeholders using the backend job payload, uploaded asset paths, and output path metadata.
+3. Submit the rendered graph to `ComfyUI` via `POST /prompt`.
+4. Poll `GET /history/<prompt_id>` until media outputs are available.
+5. Download the first returned video or image output through `GET /view?...`.
+6. Write that file into `{output_path}` and print structured metadata.
+
+Comfy bridge env vars:
+
+- `OPEN_HIGGSFIELD_COMFY_BASE_URL`
+- `OPEN_HIGGSFIELD_COMFY_TOKEN`
+- `OPEN_HIGGSFIELD_COMFY_POLL_INTERVAL`
+- `OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS`
+- `OPEN_HIGGSFIELD_COMFY_VIDEO_GENERATE_WORKFLOW`
+- `OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW`
+- `OPEN_HIGGSFIELD_COMFY_VIDEO_TRANSFORM_WORKFLOW`
+- `OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW`
+- `OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW`
+
+Starter workflow templates live in:
+
+- `backend/workflows/comfy/`
+
+Replace those placeholder JSON files with API-exported workflow graphs from your private Comfy template.

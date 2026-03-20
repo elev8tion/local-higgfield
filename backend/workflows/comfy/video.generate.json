@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "description": "Starter template for text-to-video via ComfyUI. Replace with an exported API workflow from your Comfy template.",
+    "output_node_ids": [
+      "save_video"
+    ]
+  },
+  "prompt": {
+    "text_prompt": {
+      "inputs": {
+        "text": "{{prompt}}"
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "save_video": {
+      "inputs": {
+        "filename_prefix": "{{output.stem}}"
+      },
+      "class_type": "VHS_VideoCombine"
+    }
+  }
+}

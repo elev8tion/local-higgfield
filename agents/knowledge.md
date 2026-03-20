@@ -38,6 +38,8 @@ This section is the operational tracker. If any older analysis below conflicts w
 - private GPU template blueprint drafted in `agents/private_gpu_template.md`
 - deferred work tracker drafted in `agents/deferred_work.md`
 - first-day GPU setup assets added under `gpu/`
+- rented GPU persistence checklist drafted in `agents/rented_gpu_persistence.md`
+- ComfyUI-backed runner path added so video and lipsync jobs can target a private remote Comfy template without changing the frontend API
 
 ### In Progress
 
@@ -64,7 +66,7 @@ This section is the operational tracker. If any older analysis below conflicts w
 
 ### Current Next Step
 
-- stand up the first private GPU template on the rented machine with the `gpu/` setup assets, install the first model wave, and validate one live remote video job end to end
+- point the `comfy_bridge` runtime profile at a private ComfyUI GPU template, replace the starter workflow JSON files with exported API workflows, and validate one end-to-end video job from the existing chat interface
 
 ### After That
 

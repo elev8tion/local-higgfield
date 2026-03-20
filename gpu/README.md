@@ -4,6 +4,12 @@ This folder contains the first practical setup artifacts for the rented GPU mach
 
 Use this for the first private template and first-machine bring-up.
 
+The preferred production path is now:
+
+- run a private `ComfyUI` GPU template that already has your custom nodes and models installed
+- point this repo's backend runners at that `ComfyUI` API
+- keep the frontend/chat interface as the only user-facing surface
+
 ## Files
 
 - [bootstrap.sh](/Users/kcdacre8tor/Open-Higgsfield-AI/gpu/bootstrap.sh)
@@ -25,7 +31,14 @@ Use this for the first private template and first-machine bring-up.
   - `Wan2.2-TI2V-5B`
   - `LatentSync`
   - `WhisperX`
-  - optional `MuseTalk`
+- optional `MuseTalk`
+
+## Preferred Runtime Shape
+
+- your private GPU image/template hosts `ComfyUI`
+- your chosen workflow JSON files live on that machine
+- `Open Higgsfield` backend calls `ComfyUI` over HTTP through the `comfy_bridge` runtime profile
+- model weights stay on the template image or attached persistent storage so you do not redownload them every session
 
 ## Usage
 

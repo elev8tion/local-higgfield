@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "description": "Starter template for video-to-video via ComfyUI. Replace with your exported VACE/LTX workflow.",
+    "output_node_ids": [
+      "save_video"
+    ]
+  },
+  "prompt": {
+    "load_video": {
+      "inputs": {
+        "video": "{{assets.video_path}}"
+      },
+      "class_type": "VHS_LoadVideo"
+    },
+    "text_prompt": {
+      "inputs": {
+        "text": "{{prompt}}"
+      },
+      "class_type": "CLIPTextEncode"
+    },
+    "save_video": {
+      "inputs": {
+        "filename_prefix": "{{output.stem}}"
+      },
+      "class_type": "VHS_VideoCombine"
+    }
+  }
+}
