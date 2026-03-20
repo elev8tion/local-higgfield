@@ -1,0 +1,5 @@
+COMFYUI_ARGS=--disable-auto-launch --port 18188 --enable-cors-header
+WEB_ENABLE_HTTPS=false
+WEB_ENABLE_AUTH=true
+OPEN_BUTTON_PORT=18188
+PROVISIONING_SCRIPT=https://raw.githubusercontent.com/elev8tion/local-higgfield/main/gpu/vast_provision_comfy_first_wave.sh

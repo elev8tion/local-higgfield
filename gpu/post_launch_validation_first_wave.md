@@ -1,0 +1,93 @@
+# First-Wave Post-Launch Validation
+
+Use this after the Vast instance finishes provisioning.
+
+## 1. Confirm Vast/Comfy base
+
+- open the Vast `Open` button
+- confirm `ComfyUI` loads
+- confirm the port is the intended `18188`
+
+## 2. Confirm custom nodes loaded
+
+Inside the machine:
+
+```bash
+cd /workspace/ComfyUI/custom_nodes
+ls
+```
+
+Expected first-wave repos:
+
+- `ComfyUI-VideoHelperSuite`
+- `comfyui-LatentSync`
+- `ComfyUI-MuseTalk_FSH`
+
+## 3. Confirm workflow folder exists
+
+```bash
+ls /workspace/comfy/workflows/open_higgsfield
+```
+
+Expected starter files:
+
+- `video.animate_image.wan_i2v.json`
+- `lipsync.video_audio.latentsync.json`
+- `lipsync.image_audio.musetalk.json`
+
+## 4. Install first-wave models
+
+Install only:
+
+- `Wan 2.2 I2V`
+- `LatentSync`
+- `MuseTalk`
+
+Do not install second-wave models yet.
+
+## 5. Direct Comfy workflow proof
+
+Run each workflow directly in `ComfyUI` before backend wiring:
+
+1. `Wan 2.2 I2V`
+2. `LatentSync`
+3. `MuseTalk`
+
+## 6. Export real API workflows
+
+After each workflow succeeds in raw `ComfyUI`:
+
+- export as API JSON
+- overwrite the starter file in `/workspace/comfy/workflows/open_higgsfield`
+
+## 7. Apply backend bridge config
+
+Use:
+
+- [backend_worker_env_first_wave.txt](/Users/kcdacre8tor/Open-Higgsfield-AI/gpu/backend_worker_env_first_wave.txt)
+
+and:
+
+```bash
+python3 -m backend.models.use_runtime_profile comfy_bridge
+```
+
+## 8. Restart backend
+
+Restart the backend after the env is in place.
+
+## 9. End-to-end product tests
+
+From the existing app/chat interface, run:
+
+1. one `video.animate_image` job
+2. one `lipsync.video_audio` job
+3. one `lipsync.image_audio` job
+
+## 10. Do not freeze the template yet
+
+Do not consider the template final until:
+
+- all 3 workflows run in raw `ComfyUI`
+- all 3 workflows run through the backend bridge
+- outputs return into the normal app result flow

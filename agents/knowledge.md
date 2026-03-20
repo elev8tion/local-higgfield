@@ -44,6 +44,7 @@ This section is the operational tracker. If any older analysis below conflicts w
 - exact first private Comfy template checklist drafted in `agents/first_private_comfy_template_checklist.md`
 - exact first private Comfy template install manifest drafted in `agents/first_private_comfy_template_install_manifest.md`
 - Vast-specific private Comfy launch sheet drafted in `agents/vast_private_comfy_launch_sheet.md`
+- first-wave Vast env and post-launch validation artifacts added under `gpu/`
 
 ### In Progress
 

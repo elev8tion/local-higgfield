@@ -1,0 +1,13 @@
+OPEN_HIGGSFIELD_VIDEO_COMMAND=python3 -m backend.runners.comfy_video_runner --payload "{payload_path}" --output "{output_path}"
+OPEN_HIGGSFIELD_LIPSYNC_COMMAND=python3 -m backend.runners.comfy_lipsync_runner --payload "{payload_path}" --output "{output_path}"
+
+OPEN_HIGGSFIELD_COMFY_BASE_URL=http://<worker-host-or-tunnel>:18188
+OPEN_HIGGSFIELD_COMFY_TOKEN=
+OPEN_HIGGSFIELD_COMFY_POLL_INTERVAL=2.0
+OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS=300
+
+OPEN_HIGGSFIELD_COMFY_VIDEO_GENERATE_WORKFLOW=/absolute/path/to/real/video.generate.workflow.json
+OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW=/absolute/path/to/real/video.animate_image.wan_i2v.json
+OPEN_HIGGSFIELD_COMFY_VIDEO_TRANSFORM_WORKFLOW=/absolute/path/to/real/video.transform.workflow.json
+OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/absolute/path/to/real/lipsync.image_audio.musetalk.json
+OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/absolute/path/to/real/lipsync.video_audio.latentsync.json
