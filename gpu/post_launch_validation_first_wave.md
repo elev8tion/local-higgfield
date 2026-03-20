@@ -7,6 +7,7 @@ Use this after the Vast instance finishes provisioning.
 - open the Vast `Open` button
 - confirm `ComfyUI` loads
 - confirm the port is the intended `18188`
+- confirm the actual Comfy path on disk is `/workspace/ComfyUI`
 
 ## 2. Confirm custom nodes loaded
 
@@ -74,7 +75,9 @@ python3 -m backend.models.use_runtime_profile comfy_bridge
 
 ## 8. Restart backend
 
-Restart the backend after the env is in place.
+Restart the backend on the same worker after the env is in place.
+
+Do not split backend and ComfyUI across machines yet.
 
 ## 9. End-to-end product tests
 
@@ -91,3 +94,13 @@ Do not consider the template final until:
 - all 3 workflows run in raw `ComfyUI`
 - all 3 workflows run through the backend bridge
 - outputs return into the normal app result flow
+
+## 11. First-wave architecture rule
+
+For the first proof path:
+
+- frontend may stay remote or local
+- backend should run on the worker
+- ComfyUI should run on the same worker
+
+That removes one unnecessary failure layer during validation.

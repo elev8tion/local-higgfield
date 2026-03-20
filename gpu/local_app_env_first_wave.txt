@@ -1,3 +1,11 @@
+# Do not use this for the first validation wave.
+# First-wave validation should keep the backend on the same worker as ComfyUI.
+#
+# This file is only for a later split deployment where:
+# - the backend runs on one machine
+# - ComfyUI runs on another machine
+# - the real exported workflow JSON files also exist on the backend machine
+
 OPEN_HIGGSFIELD_VIDEO_COMMAND=python3 -m backend.runners.comfy_video_runner --payload "{payload_path}" --output "{output_path}"
 OPEN_HIGGSFIELD_LIPSYNC_COMMAND=python3 -m backend.runners.comfy_lipsync_runner --payload "{payload_path}" --output "{output_path}"
 
@@ -6,8 +14,8 @@ OPEN_HIGGSFIELD_COMFY_TOKEN=
 OPEN_HIGGSFIELD_COMFY_POLL_INTERVAL=2.0
 OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS=300
 
-OPEN_HIGGSFIELD_COMFY_VIDEO_GENERATE_WORKFLOW=/absolute/path/to/real/video.generate.workflow.json
-OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW=/absolute/path/to/real/video.animate_image.wan_i2v.json
-OPEN_HIGGSFIELD_COMFY_VIDEO_TRANSFORM_WORKFLOW=/absolute/path/to/real/video.transform.workflow.json
-OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/absolute/path/to/real/lipsync.image_audio.musetalk.json
-OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/absolute/path/to/real/lipsync.video_audio.latentsync.json
+OPEN_HIGGSFIELD_COMFY_VIDEO_GENERATE_WORKFLOW=/absolute/path/on/backend-machine/to/real/video.generate.workflow.json
+OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW=/absolute/path/on/backend-machine/to/real/video.animate_image.wan_i2v.json
+OPEN_HIGGSFIELD_COMFY_VIDEO_TRANSFORM_WORKFLOW=/absolute/path/on/backend-machine/to/real/video.transform.workflow.json
+OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/absolute/path/on/backend-machine/to/real/lipsync.image_audio.musetalk.json
+OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/absolute/path/on/backend-machine/to/real/lipsync.video_audio.latentsync.json

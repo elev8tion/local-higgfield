@@ -50,6 +50,14 @@ This checklist is the "did we miss anything important before launch?" pass for t
   - media keys only
   - no subtitle/text artifact handling yet
 
+### 8b. First-wave deployment topology
+
+- first-wave proof path now standardized:
+  - backend on worker
+  - `ComfyUI` on same worker
+  - frontend can stay separate
+- split backend/worker topology deferred until after first-wave validation
+
 ### 9. First-wave feature fit
 
 - first-wave workflows chosen to match the current bridge:

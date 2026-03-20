@@ -68,7 +68,7 @@ Why:
 Clone into:
 
 ```text
-/workspace/comfy/ComfyUI/custom_nodes/
+/workspace/ComfyUI/custom_nodes/
 ```
 
 Target repos:
@@ -148,6 +148,8 @@ Keep that entire folder tree on persistent storage.
 
 ## 5. Exact First Machine-Local Env Block
 
+Use this on the worker where backend and `ComfyUI` both run during first-wave validation.
+
 Use this block as the first-wave machine-local backend config:
 
 ```bash
@@ -179,8 +181,9 @@ OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/workspace/comfy/workflows/op
 9. Export each workflow as API JSON
 10. Save the 3 API JSON files into `/workspace/comfy/workflows/open_higgsfield`
 11. Point backend env vars at those 3 files
-12. Switch backend to `comfy_bridge`
-13. Test from the existing chat interface
+12. Run backend on the same worker
+13. Switch backend to `comfy_bridge`
+14. Test from the existing chat interface
 
 ## 7. Exact First Direct Comfy Validation
 

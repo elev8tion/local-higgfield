@@ -209,10 +209,11 @@ OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/workspace/comfy/workflows/op
 10. confirm `ComfyUI` opens through Vast access path
 11. confirm custom nodes loaded cleanly
 12. run first 3 workflows directly in `ComfyUI`
-13. export workflows as API JSON
-14. point backend env vars at those workflow files
-15. switch backend to `comfy_bridge`
-16. test from the existing chat interface
+13. run backend on the same worker
+14. export workflows as API JSON
+15. point backend env vars at those workflow files
+16. switch backend to `comfy_bridge`
+17. test from the existing chat interface
 
 ## 12. Exact “Do Not Do” List
 
@@ -223,6 +224,7 @@ Do not:
 - switch Docker image on a `5090`
 - choose `Interruptible` for the first serious setup
 - install second-wave models before first-wave workflows are proven
+- split backend and ComfyUI across machines during the first validation wave
 
 ## 13. Sources
 

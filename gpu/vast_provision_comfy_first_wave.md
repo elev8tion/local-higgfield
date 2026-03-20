@@ -23,6 +23,7 @@ https://raw.githubusercontent.com/elev8tion/local-higgfield/main/gpu/vast_provis
 - copies starter workflow JSON files into the worker path
 - installs available Python requirements files
 - exports the first-wave `Open Higgsfield` `ComfyUI` env block
+- reuses Vast's `/venv/main` when available instead of inventing another first-wave Python env
 
 ## What it does not do
 
@@ -41,4 +42,5 @@ https://raw.githubusercontent.com/elev8tion/local-higgfield/main/gpu/vast_provis
    - `MuseTalk`
 4. run each workflow directly in `ComfyUI`
 5. export the real API workflows over the starter placeholder JSON files
-6. point the backend/runtime profile at those real workflow files
+6. run the backend on the same worker for the first validation wave
+7. point the backend/runtime profile at those real workflow files

@@ -77,8 +77,8 @@ Use this layout on persistent storage:
 
 ```text
 /workspace/Open-Higgsfield-AI
-/workspace/comfy/ComfyUI
-/workspace/comfy/custom_nodes
+/workspace/ComfyUI
+/workspace/ComfyUI/custom_nodes
 /workspace/comfy/workflows/open_higgsfield
 /workspace/models/checkpoints
 /workspace/models/clip
@@ -190,7 +190,7 @@ That is what the current bridge expects.
 
 ## 9. Exact Backend Runtime Profile
 
-On the machine, switch to:
+On the worker machine, switch to:
 
 ```bash
 python3 -m backend.models.use_runtime_profile comfy_bridge
@@ -235,11 +235,13 @@ Validate in this order:
 3. export each workflow as API JSON
 4. store the exported JSON in `/workspace/comfy/workflows/open_higgsfield`
 5. point the env vars at those files
-6. switch backend profile to `comfy_bridge`
-7. restart backend
-8. run one backend job per workflow from the existing chat interface
+6. run the backend on the same worker
+7. switch backend profile to `comfy_bridge`
+8. restart backend
+9. run one backend job per workflow from the existing chat interface
 
 Do not skip direct `ComfyUI` validation first.
+Do not split backend and ComfyUI onto separate machines during the first proof path.
 
 ## 12. Exact First End-to-End Tests
 

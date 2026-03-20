@@ -17,6 +17,12 @@ export TORCH_HOME="${TORCH_HOME:-$CACHE_DIR/torch}"
 
 echo "[open-higgsfield] starting first-wave Vast provisioning"
 
+if [ -f /venv/main/bin/activate ]; then
+  # Vast's Comfy template typically uses /venv/main. Reuse it instead of creating another env.
+  # shellcheck disable=SC1091
+  source /venv/main/bin/activate
+fi
+
 mkdir -p \
   "$WORKSPACE_DIR" \
   "$CUSTOM_NODES_DIR" \
@@ -85,16 +91,16 @@ if command -v python3 >/dev/null 2>&1; then
 fi
 
 cat >/tmp/open-higgsfield-comfy-env.sh <<EOF
-export HF_HOME="$HF_HOME"
-export TORCH_HOME="$TORCH_HOME"
-export OPEN_HIGGSFIELD_VIDEO_COMMAND='python3 -m backend.runners.comfy_video_runner --payload "{payload_path}" --output "{output_path}"'
-export OPEN_HIGGSFIELD_LIPSYNC_COMMAND='python3 -m backend.runners.comfy_lipsync_runner --payload "{payload_path}" --output "{output_path}"'
-export OPEN_HIGGSFIELD_COMFY_BASE_URL='http://127.0.0.1:18188'
-export OPEN_HIGGSFIELD_COMFY_POLL_INTERVAL='2.0'
-export OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS='300'
-export OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW='$WORKFLOW_DIR/video.animate_image.wan_i2v.json'
-export OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW='$WORKFLOW_DIR/lipsync.video_audio.latentsync.json'
-export OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW='$WORKFLOW_DIR/lipsync.image_audio.musetalk.json'
+HF_HOME="$HF_HOME"
+TORCH_HOME="$TORCH_HOME"
+OPEN_HIGGSFIELD_VIDEO_COMMAND="python3 -m backend.runners.comfy_video_runner --payload \"{payload_path}\" --output \"{output_path}\""
+OPEN_HIGGSFIELD_LIPSYNC_COMMAND="python3 -m backend.runners.comfy_lipsync_runner --payload \"{payload_path}\" --output \"{output_path}\""
+OPEN_HIGGSFIELD_COMFY_BASE_URL="http://127.0.0.1:18188"
+OPEN_HIGGSFIELD_COMFY_POLL_INTERVAL="2.0"
+OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS="300"
+OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW="$WORKFLOW_DIR/video.animate_image.wan_i2v.json"
+OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW="$WORKFLOW_DIR/lipsync.video_audio.latentsync.json"
+OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW="$WORKFLOW_DIR/lipsync.image_audio.musetalk.json"
 EOF
 
 if [ -w /etc/environment ]; then
