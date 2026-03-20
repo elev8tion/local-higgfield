@@ -50,8 +50,8 @@ export function LipSyncStudio() {
                 <div class="absolute top-4 right-4 text-primary animate-pulse">🎙</div>
             </div>
         </div>
-        <h1 class="text-2xl sm:text-4xl md:text-7xl font-black text-white tracking-widest uppercase mb-4 selection:bg-primary selection:text-black text-center px-4">Lip Sync</h1>
-        <p class="text-secondary text-sm font-medium tracking-wide opacity-60">First-wave worker mode: sync an existing video to uploaded audio</p>
+        <h1 class="text-2xl sm:text-4xl md:text-7xl font-black text-white tracking-widest uppercase mb-4 selection:bg-primary selection:text-black text-center px-4">Source Video Lip Sync</h1>
+        <p class="text-secondary text-sm font-medium tracking-wide opacity-60">Use an existing source clip and replace the mouth motion with uploaded speech audio</p>
     `;
     container.appendChild(hero);
 
@@ -71,9 +71,18 @@ export function LipSyncStudio() {
 
     const modeLabel = document.createElement('span');
     modeLabel.className = 'text-xs text-muted font-bold uppercase tracking-widest mr-2';
-    modeLabel.textContent = 'First wave: video + audio with LatentSync';
+    modeLabel.textContent = 'LatentSync worker path';
     modeToggleRow.appendChild(modeLabel);
     bar.appendChild(modeToggleRow);
+
+    const scopeBanner = document.createElement('div');
+    scopeBanner.className = 'mx-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-relaxed text-secondary';
+    scopeBanner.innerHTML = `
+        <div class="font-bold uppercase tracking-widest text-white/80 mb-1">What this tool does</div>
+        <div>It syncs speech onto an existing source video.</div>
+        <div class="mt-2 text-muted">It does not create a new full-length talking avatar from image + audio. That is a separate workflow.</div>
+    `;
+    bar.appendChild(scopeBanner);
 
     // --- Uploads Row ---
     const uploadsRow = document.createElement('div');
@@ -267,6 +276,7 @@ export function LipSyncStudio() {
     modelBtn.type = 'button';
     modelBtn.className = 'flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/40 transition-all text-xs font-bold text-white group';
     modelBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg><span id="ls-model-btn-label">${getCurrentModels()[0].name}</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-muted group-hover:text-white transition-colors"><polyline points="6 9 12 15 18 9"/></svg>`;
+    const modelBtnLabel = modelBtn.querySelector('#ls-model-btn-label');
 
     // Resolution selector
     const resolutionBtn = document.createElement('button');
@@ -274,6 +284,7 @@ export function LipSyncStudio() {
     resolutionBtn.type = 'button';
     resolutionBtn.className = 'flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary/40 transition-all text-xs font-bold text-white group';
     resolutionBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-primary"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span id="ls-resolution-btn-label">${selectedResolution}</span><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-muted group-hover:text-white transition-colors"><polyline points="6 9 12 15 18 9"/></svg>`;
+    const resolutionBtnLabel = resolutionBtn.querySelector('#ls-resolution-btn-label');
 
     // Generate button
     const generateBtn = document.createElement('button');
@@ -315,11 +326,11 @@ export function LipSyncStudio() {
                 item.innerHTML = `<div>${m.name}</div><div class="text-xs text-muted mt-0.5">${m.description?.slice(0, 60)}...</div>`;
                 item.onclick = () => {
                     selectedModel = m.id;
-                    document.getElementById('ls-model-btn-label').textContent = m.name;
+                    if (modelBtnLabel) modelBtnLabel.textContent = m.name;
                     const resolutions = getResolutionsForLipSyncModel(selectedModel);
                     if (resolutions.length > 0) {
                         selectedResolution = m.inputs?.resolution?.default || resolutions[0];
-                        document.getElementById('ls-resolution-btn-label').textContent = selectedResolution;
+                        if (resolutionBtnLabel) resolutionBtnLabel.textContent = selectedResolution;
                         resolutionBtn.classList.remove('hidden');
                     } else {
                         resolutionBtn.classList.add('hidden');
@@ -338,7 +349,7 @@ export function LipSyncStudio() {
                 item.textContent = r;
                 item.onclick = () => {
                     selectedResolution = r;
-                    document.getElementById('ls-resolution-btn-label').textContent = r;
+                    if (resolutionBtnLabel) resolutionBtnLabel.textContent = r;
                     closeDropdown();
                 };
                 dropdown.appendChild(item);
@@ -389,13 +400,13 @@ export function LipSyncStudio() {
         // Keep the single worker-ready model selected.
         const models = getCurrentModels();
         selectedModel = models[0].id;
-        document.getElementById('ls-model-btn-label').textContent = models[0].name;
+        if (modelBtnLabel) modelBtnLabel.textContent = models[0].name;
 
         // Update resolution
         const resolutions = getResolutionsForLipSyncModel(selectedModel);
         if (resolutions.length > 0) {
             selectedResolution = models[0].inputs?.resolution?.default || resolutions[0];
-            document.getElementById('ls-resolution-btn-label').textContent = selectedResolution;
+            if (resolutionBtnLabel) resolutionBtnLabel.textContent = selectedResolution;
             resolutionBtn.classList.remove('hidden');
         } else {
             resolutionBtn.classList.add('hidden');
@@ -625,7 +636,10 @@ export function LipSyncStudio() {
             const params = {
                 model: selectedModel,
                 audio_url: uploadedAudioUrl,
-                video_url: uploadedVideoUrl
+                video_url: uploadedVideoUrl,
+                num_inference_steps: 20,
+                guidance_scale: 1.5,
+                seed: 12345
             };
 
             if (prompt && model?.hasPrompt) params.prompt = prompt;

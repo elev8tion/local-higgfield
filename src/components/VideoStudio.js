@@ -24,7 +24,9 @@ export function VideoStudio() {
     const defaultModel = i2vModels[0];
     let selectedModel = defaultModel.id;
     let selectedModelName = defaultModel.name;
-    let selectedAr = defaultModel.inputs?.aspect_ratio?.default || '16:9';
+    let selectedAr = defaultModel.inputs?.aspect_ratio?.enum?.includes('9:16')
+        ? '9:16'
+        : (defaultModel.inputs?.aspect_ratio?.default || '16:9');
     let selectedDuration = defaultModel.inputs?.duration?.default || 5;
     let selectedResolution = defaultModel.inputs?.resolution?.default || '';
     let selectedQuality = defaultModel.inputs?.quality?.default || '';
@@ -45,8 +47,8 @@ export function VideoStudio() {
     const getCurrentModel = () => getCurrentModels().find(m => m.id === selectedModel);
     const getPreferredAspectRatio = (ratios) => {
         if (!Array.isArray(ratios) || ratios.length === 0) return '';
-        if (ratios.includes(selectedAr)) return selectedAr;
         if (ratios.includes('9:16')) return '9:16';
+        if (ratios.includes(selectedAr)) return selectedAr;
         return ratios[0];
     };
     const getQualitiesForModel = (id) => {
