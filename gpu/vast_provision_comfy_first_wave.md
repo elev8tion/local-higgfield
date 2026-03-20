@@ -18,7 +18,6 @@ https://raw.githubusercontent.com/elev8tion/local-higgfield/main/gpu/vast_provis
 - clones the first-wave custom nodes:
   - `ComfyUI-VideoHelperSuite`
   - `comfyui-LatentSync`
-  - `ComfyUI-MuseTalk_FSH`
 - creates the first-wave workflow directory
 - copies starter workflow JSON files into the worker path
 - installs available Python requirements files
@@ -39,8 +38,10 @@ https://raw.githubusercontent.com/elev8tion/local-higgfield/main/gpu/vast_provis
 3. install model files for:
    - `Wan 2.2 I2V`
    - `LatentSync`
-   - `MuseTalk`
 4. run each workflow directly in `ComfyUI`
 5. export the real API workflows over the starter placeholder JSON files
 6. run the backend on the same worker for the first validation wave
 7. point the backend/runtime profile at those real workflow files
+
+`MuseTalk` is intentionally deferred from the first wave.
+It remains a second-wave workflow after the worker path is proven with `Wan 2.2 I2V` and `LatentSync`.

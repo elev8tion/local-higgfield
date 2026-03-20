@@ -64,12 +64,10 @@ sync_repo() {
 
 sync_repo "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite" "$CUSTOM_NODES_DIR/ComfyUI-VideoHelperSuite"
 sync_repo "https://github.com/jiafuzeng/comfyui-LatentSync" "$CUSTOM_NODES_DIR/comfyui-LatentSync"
-sync_repo "https://github.com/AIFSH/ComfyUI-MuseTalk_FSH" "$CUSTOM_NODES_DIR/ComfyUI-MuseTalk_FSH"
 
 echo "[open-higgsfield] syncing starter workflow templates"
 cp "$REPO_DIR/backend/workflows/comfy/video.animate_image.json" "$WORKFLOW_DIR/video.animate_image.wan_i2v.json"
 cp "$REPO_DIR/backend/workflows/comfy/lipsync.video_audio.json" "$WORKFLOW_DIR/lipsync.video_audio.latentsync.json"
-cp "$REPO_DIR/backend/workflows/comfy/lipsync.image_audio.json" "$WORKFLOW_DIR/lipsync.image_audio.musetalk.json"
 
 if command -v python3 >/dev/null 2>&1; then
   if [ -f "$COMFY_DIR/requirements.txt" ]; then
@@ -80,8 +78,7 @@ if command -v python3 >/dev/null 2>&1; then
 
   for req in \
     "$CUSTOM_NODES_DIR/ComfyUI-VideoHelperSuite/requirements.txt" \
-    "$CUSTOM_NODES_DIR/comfyui-LatentSync/requirements.txt" \
-    "$CUSTOM_NODES_DIR/ComfyUI-MuseTalk_FSH/requirements.txt"
+    "$CUSTOM_NODES_DIR/comfyui-LatentSync/requirements.txt"
   do
     if [ -f "$req" ]; then
       echo "[open-higgsfield] installing node requirements from $req"
@@ -100,7 +97,6 @@ OPEN_HIGGSFIELD_COMFY_POLL_INTERVAL="2.0"
 OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS="300"
 OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW="$WORKFLOW_DIR/video.animate_image.wan_i2v.json"
 OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW="$WORKFLOW_DIR/lipsync.video_audio.latentsync.json"
-OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW="$WORKFLOW_DIR/lipsync.image_audio.musetalk.json"
 EOF
 
 if [ -w /etc/environment ]; then

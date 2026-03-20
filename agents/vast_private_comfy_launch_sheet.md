@@ -175,7 +175,6 @@ The first-wave workflow mappings should be:
 
 - `video.animate_image` -> `Wan 2.2 I2V`
 - `lipsync.video_audio` -> `LatentSync`
-- `lipsync.image_audio` -> `MuseTalk`
 
 ## 10. Exact First Env Block For Open Higgsfield On The Worker
 
@@ -192,7 +191,6 @@ OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS=300
 
 OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/video.animate_image.wan_i2v.json
 OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/lipsync.video_audio.latentsync.json
-OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/lipsync.image_audio.musetalk.json
 ```
 
 ## 11. Exact First Launch Checklist
@@ -208,7 +206,7 @@ OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/workspace/comfy/workflows/op
 9. launch instance
 10. confirm `ComfyUI` opens through Vast access path
 11. confirm custom nodes loaded cleanly
-12. run first 3 workflows directly in `ComfyUI`
+12. run the first 2 workflows directly in `ComfyUI`
 13. run backend on the same worker
 14. export workflows as API JSON
 15. point backend env vars at those workflow files
@@ -225,6 +223,7 @@ Do not:
 - choose `Interruptible` for the first serious setup
 - install second-wave models before first-wave workflows are proven
 - split backend and ComfyUI across machines during the first validation wave
+- force `MuseTalk` into the first wave before the worker path is proven
 
 ## 13. Sources
 

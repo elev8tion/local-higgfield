@@ -22,7 +22,6 @@ Expected first-wave repos:
 
 - `ComfyUI-VideoHelperSuite`
 - `comfyui-LatentSync`
-- `ComfyUI-MuseTalk_FSH`
 
 ## 3. Confirm workflow folder exists
 
@@ -32,9 +31,8 @@ ls /workspace/comfy/workflows/open_higgsfield
 
 Expected starter files:
 
-- `video.animate_image.wan_i2v.json`
 - `lipsync.video_audio.latentsync.json`
-- `lipsync.image_audio.musetalk.json`
+- `video.animate_image.wan_i2v.json`
 
 ## 4. Install first-wave models
 
@@ -42,7 +40,6 @@ Install only:
 
 - `Wan 2.2 I2V`
 - `LatentSync`
-- `MuseTalk`
 
 Do not install second-wave models yet.
 
@@ -52,7 +49,6 @@ Run each workflow directly in `ComfyUI` before backend wiring:
 
 1. `Wan 2.2 I2V`
 2. `LatentSync`
-3. `MuseTalk`
 
 ## 6. Export real API workflows
 
@@ -85,14 +81,13 @@ From the existing app/chat interface, run:
 
 1. one `video.animate_image` job
 2. one `lipsync.video_audio` job
-3. one `lipsync.image_audio` job
 
 ## 10. Do not freeze the template yet
 
 Do not consider the template final until:
 
-- all 3 workflows run in raw `ComfyUI`
-- all 3 workflows run through the backend bridge
+- both first-wave workflows run in raw `ComfyUI`
+- both first-wave workflows run through the backend bridge
 - outputs return into the normal app result flow
 
 ## 11. First-wave architecture rule
@@ -104,3 +99,5 @@ For the first proof path:
 - ComfyUI should run on the same worker
 
 That removes one unnecessary failure layer during validation.
+
+`MuseTalk` is deferred to the second wave.

@@ -62,6 +62,9 @@ Why:
 
 - it is a working Comfy node path specifically for `MuseTalk`
 - it clearly documents its additional package and model requirements
+ 
+`MuseTalk` is no longer part of the first validation wave.
+Keep it as the first second-wave add after `Wan 2.2 I2V` and `LatentSync` are proven.
 
 ## 2. First-Wave Node Repos Summary
 
@@ -77,7 +80,6 @@ Target repos:
 https://github.com/comfyanonymous/ComfyUI
 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 https://github.com/jiafuzeng/comfyui-LatentSync
-https://github.com/AIFSH/ComfyUI-MuseTalk_FSH
 ```
 
 ## 3. First-Wave Workflow Files
@@ -87,7 +89,6 @@ Keep only these first:
 ```text
 /workspace/comfy/workflows/open_higgsfield/video.animate_image.wan_i2v.json
 /workspace/comfy/workflows/open_higgsfield/lipsync.video_audio.latentsync.json
-/workspace/comfy/workflows/open_higgsfield/lipsync.image_audio.musetalk.json
 ```
 
 ### Workflow meaning
@@ -98,10 +99,6 @@ Keep only these first:
 - `lipsync.video_audio.latentsync.json`
   - exported API workflow for `lipsync.video_audio`
   - target model family: `LatentSync`
-- `lipsync.image_audio.musetalk.json`
-  - exported API workflow for `lipsync.image_audio`
-  - target model family: `MuseTalk`
-
 ## 4. First-Wave Model Placement
 
 ### A. `Wan 2.2 I2V`
@@ -131,20 +128,8 @@ If the chosen Comfy node expects more helper weights, keep them on persistent st
 
 ### C. `MuseTalk`
 
-The chosen Comfy MuseTalk node explicitly expects a local model folder under its node repo.
-
-Expected structure from the node README:
-
-```text
-ComfyUI-MuseTalk_FSH/models/
-├── musetalk/
-├── dwpose/
-├── face-parse-bisent/
-├── sd-vae-ft-mse/
-└── whisper/
-```
-
-Keep that entire folder tree on persistent storage.
+`MuseTalk` is deferred from first wave.
+Keep its model tree planning, but do not install it before the first two workflows are proven.
 
 ## 5. Exact First Machine-Local Env Block
 
@@ -164,7 +149,6 @@ OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS=300
 OPEN_HIGGSFIELD_COMFY_VIDEO_GENERATE_WORKFLOW=
 OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/video.animate_image.wan_i2v.json
 OPEN_HIGGSFIELD_COMFY_VIDEO_TRANSFORM_WORKFLOW=
-OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/lipsync.image_audio.musetalk.json
 OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/lipsync.video_audio.latentsync.json
 ```
 
@@ -173,17 +157,16 @@ OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/workspace/comfy/workflows/op
 1. Install `ComfyUI`
 2. Install `VideoHelperSuite`
 3. Install `comfyui-LatentSync`
-4. Install `ComfyUI-MuseTalk_FSH`
-5. Restart `ComfyUI`
-6. Confirm node imports are clean
-7. Download first-wave models into persistent paths
-8. Load and run each workflow directly inside `ComfyUI`
-9. Export each workflow as API JSON
-10. Save the 3 API JSON files into `/workspace/comfy/workflows/open_higgsfield`
-11. Point backend env vars at those 3 files
-12. Run backend on the same worker
-13. Switch backend to `comfy_bridge`
-14. Test from the existing chat interface
+4. Restart `ComfyUI`
+5. Confirm node imports are clean
+6. Download first-wave models into persistent paths
+7. Load and run each workflow directly inside `ComfyUI`
+8. Export each workflow as API JSON
+9. Save the workflow API JSON files into `/workspace/comfy/workflows/open_higgsfield`
+10. Point backend env vars at those files
+11. Run backend on the same worker
+12. Switch backend to `comfy_bridge`
+13. Test from the existing chat interface
 
 ## 7. Exact First Direct Comfy Validation
 
@@ -194,9 +177,6 @@ Before touching backend integration, confirm these 3 all run once inside raw `Co
    - output short `9:16` clip
 2. `LatentSync`
    - one short source video
-   - one short audio clip
-3. `MuseTalk`
-   - one portrait image
    - one short audio clip
 
 If any workflow does not run directly inside `ComfyUI`, do not point the backend at it yet.
@@ -216,7 +196,6 @@ python3 -m backend.models.use_runtime_profile comfy_bridge
 4. run one app job for each:
    - `video.animate_image`
    - `lipsync.video_audio`
-   - `lipsync.image_audio`
 
 ## 9. Exact “Not Yet” Node Repos
 
@@ -236,6 +215,7 @@ After the first 3 workflows are stable, add in this order:
 1. `Wan 2.2 S2V`
 2. `Wan 2.2 Animate`
 3. `Wan 2.1 VACE`
-4. explicit `video.extend`
-5. captions
-6. lyrics
+4. `MuseTalk`
+5. explicit `video.extend`
+6. captions
+7. lyrics

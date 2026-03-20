@@ -72,7 +72,7 @@ This section is the operational tracker. If any older analysis below conflicts w
 
 ### Current Next Step
 
-- point the `comfy_bridge` runtime profile at a private ComfyUI GPU template, replace the starter workflow JSON files with exported API workflows for `video.animate_image`, `lipsync.video_audio`, and `lipsync.image_audio`, and validate one end-to-end job per workflow from the existing chat interface
+- point the `comfy_bridge` runtime profile at a private ComfyUI GPU template, replace the starter workflow JSON files with exported API workflows for `video.animate_image` and `lipsync.video_audio`, and validate one end-to-end job per workflow from the existing chat interface
 
 ### After That
 

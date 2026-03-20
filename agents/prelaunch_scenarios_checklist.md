@@ -63,11 +63,11 @@ This checklist is the "did we miss anything important before launch?" pass for t
 - first-wave workflows chosen to match the current bridge:
   - `video.animate_image`
   - `lipsync.video_audio`
-  - `lipsync.image_audio`
 
 ### 10. Second-wave feature risk
 
 - explicitly deferred:
+  - `lipsync.image_audio`
   - `video.extend`
   - captions
   - lyrics

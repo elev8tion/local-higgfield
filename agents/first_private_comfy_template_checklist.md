@@ -57,11 +57,10 @@ Only install and wire these first:
    - first real workflow: `Wan 2.2 I2V`
 2. `lipsync.video_audio`
    - first real workflow: `LatentSync`
-3. `lipsync.image_audio`
-   - first real workflow: `MuseTalk`
 
 Do not start by wiring:
 
+- `lipsync.image_audio`
 - `video.extend`
 - captions
 - lyrics
@@ -142,7 +141,6 @@ Install only:
 
 - `Wan 2.2 I2V`
 - `LatentSync`
-- `MuseTalk`
 
 Optional:
 
@@ -163,7 +161,6 @@ Create and keep these workflow JSON files on the GPU machine:
 ```text
 /workspace/comfy/workflows/open_higgsfield/video.animate_image.wan_i2v.json
 /workspace/comfy/workflows/open_higgsfield/lipsync.video_audio.latentsync.json
-/workspace/comfy/workflows/open_higgsfield/lipsync.image_audio.musetalk.json
 ```
 
 These should be:
@@ -216,7 +213,6 @@ OPEN_HIGGSFIELD_COMFY_MAX_ATTEMPTS=300
 
 OPEN_HIGGSFIELD_COMFY_VIDEO_ANIMATE_IMAGE_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/video.animate_image.wan_i2v.json
 OPEN_HIGGSFIELD_COMFY_LIPSYNC_VIDEO_AUDIO_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/lipsync.video_audio.latentsync.json
-OPEN_HIGGSFIELD_COMFY_LIPSYNC_IMAGE_AUDIO_WORKFLOW=/workspace/comfy/workflows/open_higgsfield/lipsync.image_audio.musetalk.json
 ```
 
 Leave these empty for the first wave:
@@ -231,7 +227,7 @@ OPEN_HIGGSFIELD_COMFY_VIDEO_TRANSFORM_WORKFLOW=
 Validate in this order:
 
 1. confirm `ComfyUI` opens
-2. confirm each of the 3 workflows runs directly in `ComfyUI`
+2. confirm both first-wave workflows run directly in `ComfyUI`
 3. export each workflow as API JSON
 4. store the exported JSON in `/workspace/comfy/workflows/open_higgsfield`
 5. point the env vars at those files
@@ -261,17 +257,11 @@ Run exactly these 3 product-path tests:
 - input: one short source video + one audio clip
 - output target: synced creator clip
 
-### Test 3
-
-- feature: `lipsync.image_audio`
-- workflow: `MuseTalk`
-- input: one portrait image + one audio clip
-- output target: talking portrait video
-
 ## 13. Exact “Do Not Add Yet” List
 
 Do not add these to the first private template:
 
+- `lipsync.image_audio`
 - `Wan 2.2 S2V`
 - `Wan 2.2 Animate`
 - `Wan 2.1 VACE`
@@ -287,12 +277,13 @@ That keeps the first template small enough to stabilize.
 
 After the first 3 workflows work through the backend:
 
-1. add `Wan 2.2 S2V`
-2. add `Wan 2.2 Animate`
-3. add `Wan 2.1 VACE`
-4. add explicit `video.extend`
-5. add captions
-6. add lyrics
+1. add `lipsync.image_audio` with `MuseTalk`
+2. add `Wan 2.2 S2V`
+3. add `Wan 2.2 Animate`
+4. add `Wan 2.1 VACE`
+5. add explicit `video.extend`
+6. add captions
+7. add lyrics
 
 ## 15. Bottom Line
 
